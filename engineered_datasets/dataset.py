@@ -9,13 +9,13 @@ class DataSet:
 
     def __init__(
             self,
-            training_data_file:str,
-            submission_data_file:str,
-            dataset_file:str,
-            string_features:list
+            dataset_file: str,
+            train_data: pd.DataFrame,
+            test_data: pd.DataFrame=None,
+            string_features: list=None
         ):
 
-        self.training_data_file=training_data_file
-        self.submission_data_file=submission_data_file
         self.dataset_file=dataset_file
+        self.train_data=train_data
+        self.test_data=test_data
         self.string_features=string_features
