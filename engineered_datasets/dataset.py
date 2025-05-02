@@ -15,7 +15,25 @@ class DataSet:
             string_features: list=None
         ):
 
-        self.dataset_file=dataset_file
-        self.train_data=train_data
-        self.test_data=test_data
-        self.string_features=string_features
+        if isinstance(train_data, pd.DataFrame):
+            self.dataset_file=dataset_file
+        else:
+            raise TypeError('Dataset file name is not a string.')
+
+        if isinstance(train_data, pd.DataFrame):
+            self.train_data=train_data
+
+        else:
+            raise TypeError('Train data is not a Pandas DataFrame.')
+
+        if isinstance(train_data, pd.DataFrame) or test_data is None:
+            self.test_data=test_data
+
+        else:
+            raise TypeError('Test data is not a Pandas DataFrame.')
+
+        if isinstance(train_data, pd.DataFrame) or test_data is None:
+            self.string_features=string_features
+
+        else:
+            raise TypeError('String features is not a list.')
