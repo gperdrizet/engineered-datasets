@@ -62,20 +62,32 @@ class DataSet:
             }
         }
 
+    def _select_features(self, n_features:int):
+        '''Selects a random subset of features.'''
 
-    def _generate_data_pipeline(self):
+        features=self.train_data.columns.astype(str).to_list()
+        shuffle(features)
+        features=features[:n_features]
+
+        return features
+
+
+    def _generate_data_pipeline(self, n_steps:int):
         '''Generates one random sequence of feature engineering operations. Starts with
-        a string encoding method if we have string features'''
+        a string encoding method if we have string features.'''
 
         pipeline={}
 
+        # Choose a string encoding method, if needed
         if self.string_features is not None:
             options=list(self.string_encodings.keys())
             selection=choice(options)
             pipeline[selection]=self.string_encodings[selection]
 
+        # Construct a random sequence of feature engineering operations
         operations=list(self.engineerings.keys())
         shuffle(operations)
+        operations=operations[:n_steps]
 
         for operation in operations:
 

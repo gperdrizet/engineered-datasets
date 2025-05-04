@@ -103,11 +103,40 @@ class TestDataPipelineGen(unittest.TestCase):
     def test_generate_data_pipeline(self):
         '''Tests the data pipeline generation function.'''
 
-        pipeline=self.dataset._generate_data_pipeline()
+        pipeline=self.dataset._generate_data_pipeline(2)
 
-        self.assertGreater(len(pipeline), 1)
+        self.assertEqual(len(pipeline), 3)
 
         for operation, parameters in pipeline.items():
             self.assertTrue(isinstance(operation, str))
             self.assertTrue(isinstance(parameters, dict))
 
+
+class TestFeatureSelection(unittest.TestCase):
+    '''Tests for data pipeline generator function.'''
+
+    def setUp(self):
+        '''Dummy DataFrames and datasets for tests.'''
+
+        self.dummy_df = pd.DataFrame({
+            1: [0,1],
+            'feature2': [3,4],
+            'feature3': ['a', 'b']
+        })
+
+        self.dataset = ds.DataSet(
+            self.dummy_df,
+            test_data=self.dummy_df,
+            string_features=['feature3']
+        )
+
+
+    def test_select_features(self):
+        '''Tests feature selection function.'''
+
+        features=self.dataset._select_features(2)
+
+        self.assertEqual(len(features), 2)
+
+        for feature in features:
+            self.assertTrue(isinstance(feature, str))
