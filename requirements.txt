@@ -3,3 +3,4 @@ pandas
 hatchling
 twine
 build
+coverage
