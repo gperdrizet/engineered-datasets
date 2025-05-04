@@ -4,6 +4,7 @@ import unittest
 import h5py
 import pandas as pd
 import engineered_datasets.dataset as ds
+import engineered_datasets.feature_methods as fm
 
 class TestDataSetInit(unittest.TestCase):
     '''Tests for main data set generator class initialization.'''
@@ -134,9 +135,108 @@ class TestFeatureSelection(unittest.TestCase):
     def test_select_features(self):
         '''Tests feature selection function.'''
 
-        features=self.dataset._select_features(2)
+        features=self.dataset._select_features(2, self.dummy_df)
 
         self.assertEqual(len(features), 2)
 
         for feature in features:
             self.assertTrue(isinstance(feature, str))
+
+
+class TestDatasetGeneration(unittest.TestCase):
+    '''Tests dataset generation.'''
+
+    def setUp(self):
+        '''Dummy DataFrames and datasets for tests.'''
+
+        self.dummy_df = pd.DataFrame({
+            1: [0,1],
+            'feature2': [3,4],
+            'feature3': ['a', 'b']
+        })
+
+        self.dataset = ds.DataSet(
+            self.dummy_df,
+            test_data=self.dummy_df,
+            string_features=['feature3']
+        )
+
+        self.dataset.make_datasets(2, 2, 1)
+
+
+    def test_make_datasets(self):
+        '''Tests generation of datasets.'''
+
+        hdf = h5py.File('data/dataset.hdf5', 'a')
+
+        training_datasets=hdf['train']
+        self.assertEqual(len(training_datasets), 2)
+
+        testing_datasets=hdf['test']
+        self.assertEqual(len(testing_datasets), 2)
+
+
+class TestFeatureMethods(unittest.TestCase):
+    '''Tests feature engineering method functions.'''
+
+    def setUp(self):
+        '''Dummy DataFrames for tests.'''
+
+        self.dummy_df = pd.DataFrame({
+            'feature1': [0,1],
+            'feature2': [3,4],
+            'feature3': ['a', 'b']
+        })
+
+
+    def test_onehot_encoding(self):
+        '''Tests onehot encoder.'''
+
+        train_df, test_df=fm.onehot_encoding(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature3'],
+            {'sparse_output': False}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_ordinal_encoding(self):
+        '''Tests onehot encoder.'''
+
+        train_df, test_df=fm.ordinal_encoding(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature3']
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_poly_features(self):
+        '''Tests onehot encoder.'''
+
+        train_df, test_df=fm.poly_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature2']
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_spline_features(self):
+        '''Tests onehot encoder.'''
+
+        train_df, test_df=fm.spline_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature2']
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))

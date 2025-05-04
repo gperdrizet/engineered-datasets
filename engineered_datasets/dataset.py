@@ -5,7 +5,11 @@ from pathlib import Path
 from random import choice, shuffle
 
 import h5py
+import numpy as np
 import pandas as pd
+
+import engineered_datasets.feature_methods as fm
+
 
 class DataSet:
     '''Dataset generator class.'''
@@ -19,12 +23,14 @@ class DataSet:
 
         # Type check the user arguments and assign them to attributes
         if isinstance(train_data, pd.DataFrame):
+            train_data.columns = train_data.columns.astype(str)
             self.train_data = train_data
 
         else:
             raise TypeError('Train data is not a Pandas DataFrame.')
 
         if isinstance(test_data, pd.DataFrame) or test_data is None:
+            test_data.columns = test_data.columns.astype(str)
             self.test_data = test_data
 
         else:
@@ -45,7 +51,7 @@ class DataSet:
 
         # Define the feature engineering pipeline operations
         self.string_encodings={
-            'onehot_encoding': {},
+            'onehot_encoding': {'sparse_output': False},
             'ordinal_encoding': {}
         }
 
@@ -55,17 +61,56 @@ class DataSet:
                 'interaction_only': [True, False],
             },
             'spline_features': {
-                'n_knots': [3, 4, 5],
+                'n_knots': [5],
                 'degree': [2, 3, 4],
                 'knots': ['uniform', 'quantile'],
                 'extrapolation': ['error', 'constant', 'linear', 'continue', 'periodic']
             }
         }
 
-    def _select_features(self, n_features:int):
+
+    def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
+        '''Makes n datasets with different feature subsets and pipelines.'''
+
+        hdf = h5py.File('data/dataset.hdf5', 'w')
+
+        for n in range(n_datasets):
+
+            train_df=self.train_data.copy()
+            test_df=self.test_data.copy()
+            pipeline=self._generate_data_pipeline(n_steps)
+
+            for operation, arguments in pipeline.items():
+                func = getattr(fm, operation)
+
+                if operation in self.string_encodings:
+                    train_df, test_df=func(
+                        train_df,
+                        test_df,
+                        self.string_features,
+                        arguments
+                    )
+
+                else:
+                    features=self._select_features(n_features, train_df)
+
+                    train_df, test_df=func(
+                        train_df,
+                        test_df,
+                        features,
+                        arguments
+                    )
+
+            _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df))
+            _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df))
+
+        hdf.close()
+
+
+    def _select_features(self, n_features:int, data_df:pd.DataFrame):
         '''Selects a random subset of features.'''
 
-        features=self.train_data.columns.astype(str).to_list()
+        features=data_df.columns.to_list()#.astype(str).to_list()
         shuffle(features)
         features=features[:n_features]
 

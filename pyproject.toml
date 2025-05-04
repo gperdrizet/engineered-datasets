@@ -13,7 +13,9 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
   "h5py",
-  "pandas"
+  "numpy",
+  "pandas",
+  "scikit-learn"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
