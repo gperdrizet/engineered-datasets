@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-import engineered_datasets.feature_methods as fm
+import ensemblesets.feature_methods as fm
 
 
 class DataSet:
