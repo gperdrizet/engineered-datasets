@@ -5,3 +5,4 @@ hatchling
 twine
 build
 coverage
+flake8
