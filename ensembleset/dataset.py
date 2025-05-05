@@ -65,6 +65,9 @@ class DataSet:
                 'degree': [2, 3, 4],
                 'knots': ['uniform', 'quantile'],
                 'extrapolation': ['error', 'constant', 'linear', 'continue', 'periodic']
+            },
+            'log_features':{
+                'base': ['2', 'e', '10']
             }
         }
 

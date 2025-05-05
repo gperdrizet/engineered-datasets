@@ -197,8 +197,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.onehot_encoding(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature3'],
-            {'sparse_output': False}
+            ['feature3']
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
@@ -224,7 +223,9 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.poly_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature2']
+            ['feature2'],
+            {'degree': 2}
+
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
@@ -237,7 +238,23 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.spline_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature2']
+            ['feature2'],
+            {'n_knots': 2}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_log_features(self):
+        '''Tests log features transformer.'''
+
+
+        train_df, test_df=fm.log_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1'],
+            {'base': '2'}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

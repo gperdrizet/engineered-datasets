@@ -2,23 +2,21 @@
 
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer
 
 
 def onehot_encoding(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict=None
+        kwargs:dict={'sparse_output': False}
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's one hot encoder.'''
 
-    if kwargs is None:
-        encoder=OneHotEncoder()
-    else:
-        encoder=OneHotEncoder(**kwargs)
+    encoder=OneHotEncoder(**kwargs)
 
     encoded_data=encoder.fit_transform(train_df[features])
     encoded_df=pd.DataFrame(encoded_data, columns=encoder.get_feature_names_out())
@@ -38,15 +36,15 @@ def ordinal_encoding(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict=None
+        kwargs:dict={
+            'handle_unknown': 'use_encoded_value',
+            'unknown_value': np.nan  
+        }
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's label encoder.'''
 
-    if kwargs is None:
-        encoder=OrdinalEncoder()
-    else:
-        encoder=OrdinalEncoder(**kwargs)
+    encoder=OrdinalEncoder(**kwargs)
 
     train_df[features]=encoder.fit_transform(train_df[features])
 
@@ -60,15 +58,12 @@ def poly_features(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict=None
+        kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's polynomial feature transformer..'''
 
-    if kwargs is None:
-        transformer=PolynomialFeatures()
-    else:
-        transformer=PolynomialFeatures(**kwargs)
+    transformer=PolynomialFeatures(**kwargs)
 
     encoded_data=transformer.fit_transform(train_df[features])
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
@@ -88,15 +83,12 @@ def spline_features(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict=None
+        kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's polynomial feature transformer..'''
 
-    if kwargs is None:
-        transformer=SplineTransformer()
-    else:
-        transformer=SplineTransformer(**kwargs)
+    transformer=SplineTransformer(**kwargs)
 
     encoded_data=transformer.fit_transform(train_df[features])
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
@@ -108,5 +100,37 @@ def spline_features(
         encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
+
+    return train_df, test_df
+
+
+def log_features(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Takes log of feature, uses sklearn min-max scaler if needed
+    to avoid undefined log errors.'''
+
+    for feature in features:
+        if min(train_df[feature]) <= 0:
+            scaler=MinMaxScaler()
+
+            train_df[feature]=scaler.fit_transform(train_df[feature].to_frame())
+            test_df[feature]=scaler.fit_transform(test_df[feature].to_frame())
+
+        if kwargs['base'] == '2':
+            train_df[feature]=np.log2(train_df[feature])
+            test_df[feature]=np.log2(test_df[feature])
+
+        if kwargs['base'] == 'e':
+            train_df[feature]=np.log(train_df[feature])
+            test_df[feature]=np.log(test_df[feature])
+
+        if kwargs['base'] == '10':
+            train_df[feature]=np.log10(train_df[feature])
+            test_df[feature]=np.log10(test_df[feature])
 
     return train_df, test_df
