@@ -3,8 +3,8 @@
 import unittest
 import h5py
 import pandas as pd
-import ensemblesets.dataset as ds
-import ensemblesets.feature_methods as fm
+import ensembleset.dataset as ds
+import ensembleset.feature_methods as fm
 
 # pylint: disable=protected-access
 
