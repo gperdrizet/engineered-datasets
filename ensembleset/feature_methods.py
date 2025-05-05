@@ -122,15 +122,15 @@ def log_features(
             test_df[feature]=scaler.fit_transform(test_df[feature].to_frame())
 
         if kwargs['base'] == '2':
-            train_df[feature]=np.log2(train_df[feature])
-            test_df[feature]=np.log2(test_df[feature])
+            train_df[f'{feature}_log2']=np.log2(train_df[feature])
+            test_df[f'{feature}_log2']=np.log2(test_df[feature])
 
         if kwargs['base'] == 'e':
-            train_df[feature]=np.log(train_df[feature])
-            test_df[feature]=np.log(test_df[feature])
+            train_df[f'{feature}_ln']=np.log(train_df[feature])
+            test_df[f'{feature}_ln']=np.log(test_df[feature])
 
         if kwargs['base'] == '10':
-            train_df[feature]=np.log10(train_df[feature])
-            test_df[feature]=np.log10(test_df[feature])
+            train_df[f'{feature}_log10']=np.log10(train_df[feature])
+            test_df[f'{feature}_log10']=np.log10(test_df[feature])
 
     return train_df, test_df
