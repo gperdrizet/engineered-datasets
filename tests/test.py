@@ -322,3 +322,27 @@ class TestFeatureMethods(unittest.TestCase):
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
         self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_sum_features(self):
+        '''Tests sum features transformer.'''
+
+        train_df, test_df=fm.sum_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'n_addends': 2}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        train_df, test_df=fm.sum_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'n_addends': 4}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))

@@ -1,7 +1,7 @@
 '''Collection of functions to run feature engineering operations.'''
 
 from math import e
-from itertools import permutations
+from itertools import permutations, combinations
 from typing import Tuple
 
 import numpy as np
@@ -178,15 +178,49 @@ def exponential_features(
         kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    'Adds exponential features with base 2 or base e.'
+    '''Adds exponential features with base 2 or base e.'''
 
     for feature in features:
         if kwargs['base'] == 'e':
-            train_df[f'{feature}_exp_base_e']=e**train_df[feature]
-            test_df[f'{feature}_exp_base_e']=e**test_df[feature]
+            train_df[f'{feature}_exp_base_e'] = e**train_df[feature]
+            test_df[f'{feature}_exp_base_e'] = e**test_df[feature]
 
         elif kwargs['base'] == '2':
-            train_df[f'{feature}_exp_base_e']=2**train_df[feature]
-            test_df[f'{feature}_exp_base_e']=2**test_df[feature]
+            train_df[f'{feature}_exp_base_e'] = 2**train_df[feature]
+            test_df[f'{feature}_exp_base_e'] = 2**test_df[feature]
 
     return train_df, test_df
+
+
+def sum_features(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Adds sum features for variable number of addends.'''
+
+    if kwargs['n_addends'] > len(features):
+        n_addends=len(features)
+
+    else:
+        n_addends=kwargs['n_addends']
+
+    addend_sets=combinations(features, n_addends)
+
+    for i, addend_set in enumerate(addend_sets):
+
+        train_sum = [0]*len(train_df)
+        test_sum = [0]*len(train_df)
+
+        for addend in addend_set:
+
+            train_sum += train_df[addend]
+            test_sum += test_df[addend]
+
+        train_df[f'sum_feature_{i}'] = train_sum
+        test_df[f'sum_feature_{i}'] = test_sum
+
+    return train_df, test_df
+

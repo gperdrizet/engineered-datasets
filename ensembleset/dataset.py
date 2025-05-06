@@ -69,14 +69,17 @@ class DataSet:
                 'knots': ['uniform', 'quantile'],
                 'extrapolation': ['error', 'constant', 'linear', 'continue', 'periodic']
             },
-            'log_features':{
+            'log_features': {
                 'base': ['2', 'e', '10']
             },
-            'ratio_features':{
+            'ratio_features': {
                 'div_zero_value': [np.nan]
             },
-            'exponential_features':{
+            'exponential_features': {
                 'base': ['2', 'e']
+            },
+            'sum_features': {
+                'n_addends': [2,3,4]
             }
         }
 
@@ -88,15 +91,15 @@ class DataSet:
 
         for n in range(n_datasets):
 
-            train_df=self.train_data.copy()
-            test_df=self.test_data.copy()
-            pipeline=self._generate_data_pipeline(n_steps)
+            train_df = self.train_data.copy()
+            test_df = self.test_data.copy()
+            pipeline = self._generate_data_pipeline(n_steps)
 
             for operation, arguments in pipeline.items():
                 func = getattr(fm, operation)
 
                 if operation in self.string_encodings:
-                    train_df, test_df=func(
+                    train_df, test_df = func(
                         train_df,
                         test_df,
                         self.string_features,
@@ -104,9 +107,9 @@ class DataSet:
                     )
 
                 else:
-                    features=self._select_features(n_features, train_df)
+                    features = self._select_features(n_features, train_df)
 
-                    train_df, test_df=func(
+                    train_df, test_df = func(
                         train_df,
                         test_df,
                         features,
@@ -122,9 +125,9 @@ class DataSet:
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
         '''Selects a random subset of features.'''
 
-        features=data_df.columns.to_list()#.astype(str).to_list()
+        features = data_df.columns.to_list()#.astype(str).to_list()
         shuffle(features)
-        features=features[:n_features]
+        features = features[:n_features]
 
         return features
 
@@ -137,24 +140,24 @@ class DataSet:
 
         # Choose a string encoding method, if needed
         if self.string_features is not None:
-            options=list(self.string_encodings.keys())
-            selection=choice(options)
-            pipeline[selection]=self.string_encodings[selection]
+            options = list(self.string_encodings.keys())
+            selection = choice(options)
+            pipeline[selection] = self.string_encodings[selection]
 
         # Construct a random sequence of feature engineering operations
-        operations=list(self.engineerings.keys())
+        operations = list(self.engineerings.keys())
         shuffle(operations)
-        operations=operations[:n_steps]
+        operations = operations[:n_steps]
 
         for operation in operations:
 
-            pipeline[operation]={}
-            parameters=self.engineerings[operation]
+            pipeline[operation] = {}
+            parameters = self.engineerings[operation]
 
             for parameter, values in parameters.items():
 
-                value=choice(values)
-                pipeline[operation][parameter]=value
+                value = choice(values)
+                pipeline[operation][parameter] = value
 
         return pipeline
 
