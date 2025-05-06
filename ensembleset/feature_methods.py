@@ -212,7 +212,7 @@ def sum_features(
     for i, addend_set in enumerate(addend_sets):
 
         train_sum = [0]*len(train_df)
-        test_sum = [0]*len(train_df)
+        test_sum = [0]*len(test_df)
 
         for addend in addend_set:
 
@@ -224,3 +224,35 @@ def sum_features(
 
     return train_df, test_df
 
+
+def difference_features(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Adds difference features for variable number of subtrahends.'''
+
+    if kwargs['n_subtrahends'] > len(features):
+        n_subtrahends=len(features)
+
+    else:
+        n_subtrahends=kwargs['n_subtrahends']
+
+    subtrahend_sets=combinations(features, n_subtrahends)
+
+    for i, subtrahend_set in enumerate(subtrahend_sets):
+
+        train_difference = train_df[subtrahend_set[0]]
+        test_difference = test_df[subtrahend_set[0]]
+
+        for subtrahend in subtrahend_set[1:]:
+
+            train_difference -= train_df[subtrahend]
+            test_difference -= test_df[subtrahend]
+
+        train_df[f'difference_feature_{i}'] = train_difference
+        test_df[f'difference_feature_{i}'] = test_difference
+
+    return train_df, test_df

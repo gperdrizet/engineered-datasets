@@ -346,3 +346,27 @@ class TestFeatureMethods(unittest.TestCase):
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
         self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_difference_features(self):
+        '''Tests difference features transformer.'''
+
+        train_df, test_df=fm.difference_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'n_subtrahends': 2}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        train_df, test_df=fm.difference_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'n_subtrahends': 4}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))

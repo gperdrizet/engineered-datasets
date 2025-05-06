@@ -80,6 +80,9 @@ class DataSet:
             },
             'sum_features': {
                 'n_addends': [2,3,4]
+            },
+            'difference_features': {
+                'n_subtrahends': [2,3,4]
             }
         }
 
