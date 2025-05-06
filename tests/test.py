@@ -2,6 +2,7 @@
 
 import unittest
 import h5py
+import numpy as np
 import pandas as pd
 import ensembleset.dataset as ds
 import ensembleset.feature_methods as fm
@@ -197,7 +198,8 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.onehot_encoding(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature3']
+            ['feature3'],
+            {'sparse_output': False}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
@@ -210,7 +212,11 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.ordinal_encoding(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature3']
+            ['feature3'],
+            {
+                'handle_unknown': 'use_encoded_value',
+                'unknown_value': np.nan  
+            }
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
@@ -249,12 +255,46 @@ class TestFeatureMethods(unittest.TestCase):
     def test_log_features(self):
         '''Tests log features transformer.'''
 
-
         train_df, test_df=fm.log_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             ['feature1'],
             {'base': '2'}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        train_df, test_df=fm.log_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1'],
+            {'base': 'e'}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        train_df, test_df=fm.log_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1'],
+            {'base': '10'}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+
+    def test_ratio_features(self):
+        '''Tests log features transformer.'''
+
+        train_df, test_df=fm.ratio_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'div_zero_value': np.nan}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

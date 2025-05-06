@@ -52,7 +52,10 @@ class DataSet:
         # Define the feature engineering pipeline operations
         self.string_encodings={
             'onehot_encoding': {'sparse_output': False},
-            'ordinal_encoding': {}
+            'ordinal_encoding': {
+                'handle_unknown': 'use_encoded_value',
+                'unknown_value': np.nan  
+            }
         }
 
         self.engineerings={
@@ -68,6 +71,9 @@ class DataSet:
             },
             'log_features':{
                 'base': ['2', 'e', '10']
+            },
+            'ratio_features':{
+                'div_zero_value': [np.nan]
             }
         }
 

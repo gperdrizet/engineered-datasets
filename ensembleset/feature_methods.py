@@ -1,5 +1,6 @@
 '''Collection of functions to run feature engineering operations.'''
 
+from itertools import permutations
 from typing import Tuple
 
 import numpy as np
@@ -11,7 +12,7 @@ def onehot_encoding(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict={'sparse_output': False}
+        kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's one hot encoder.'''
@@ -36,10 +37,7 @@ def ordinal_encoding(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict={
-            'handle_unknown': 'use_encoded_value',
-            'unknown_value': np.nan  
-        }
+        kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's label encoder.'''
@@ -132,5 +130,39 @@ def log_features(
         if kwargs['base'] == '10':
             train_df[f'{feature}_log10']=np.log10(train_df[feature])
             test_df[f'{feature}_log10']=np.log10(test_df[feature])
+
+    return train_df, test_df
+
+def ratio_features(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Adds every possible ratio feature, replaces divide by zero errors
+    with np.nan.'''
+
+    feature_pairs=permutations(features, 2)
+
+    for feature_a, feature_b in feature_pairs:
+
+        quotient=np.divide(
+            np.array(train_df[feature_a]),
+            np.array(train_df[feature_b]),
+            out=np.array([kwargs['div_zero_value']]*len(train_df[feature_a])),
+            where=train_df[feature_b]!=0
+        )
+
+        train_df[f'{feature_a}_over_{feature_b}'] = quotient
+
+        quotient=np.divide(
+            np.array(test_df[feature_a]),
+            np.array(test_df[feature_b]),
+            out=np.array([kwargs['div_zero_value']]*len(test_df[feature_a])),
+            where=test_df[feature_b]!=0
+        )
+
+        test_df[f'{feature_a}_over_{feature_b}'] = quotient
 
     return train_df, test_df
