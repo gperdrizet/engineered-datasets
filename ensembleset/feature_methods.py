@@ -157,6 +157,9 @@ def ratio_features(
 
     feature_pairs=permutations(features, 2)
 
+    train_features={}
+    test_features={}
+
     for feature_a, feature_b in feature_pairs:
 
         quotient = np.divide(
@@ -166,7 +169,7 @@ def ratio_features(
             where=np.array(train_df[feature_b]) != 0
         )
 
-        train_df[f'{feature_a}_over_{feature_b}'] = quotient
+        train_features[f'{feature_a}_over_{feature_b}'] = quotient
 
         quotient = np.divide(
             np.array(test_df[feature_a]),
@@ -175,7 +178,13 @@ def ratio_features(
             where=np.array(test_df[feature_b]) != 0
         )
 
-        test_df[f'{feature_a}_over_{feature_b}'] = quotient
+        test_features[f'{feature_a}_over_{feature_b}'] = quotient
+
+    new_train_df=pd.DataFrame.from_dict(train_features)
+    new_test_df=pd.DataFrame.from_dict(test_features)
+
+    train_df=pd.concat([train_df, new_train_df], axis=1)
+    test_df=pd.concat([test_df, new_test_df], axis=1)
 
     return train_df, test_df
 
