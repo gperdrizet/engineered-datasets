@@ -6,6 +6,7 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer
 
 
@@ -63,14 +64,18 @@ def poly_features(
     '''Runs sklearn's polynomial feature transformer..'''
 
     transformer=PolynomialFeatures(**kwargs)
+    imputer=SimpleImputer(strategy='mean')
 
-    encoded_data=transformer.fit_transform(train_df[features])
+    imputed_data=imputer.fit_transform(train_df[features])
+    encoded_data=transformer.fit_transform(imputed_data)
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
 
     if test_df is not None:
-        encoded_data=transformer.transform(test_df[features])
+
+        imputed_data=imputer.transform(test_df[features])
+        encoded_data=transformer.transform(imputed_data)
         encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
@@ -88,14 +93,18 @@ def spline_features(
     '''Runs sklearn's polynomial feature transformer..'''
 
     transformer=SplineTransformer(**kwargs)
+    imputer=SimpleImputer(strategy='mean')
 
-    encoded_data=transformer.fit_transform(train_df[features])
+    imputed_data=imputer.fit_transform(train_df[features])
+    encoded_data=transformer.fit_transform(imputed_data)
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
 
     if test_df is not None:
-        encoded_data=transformer.transform(test_df[features])
+
+        imputed_data=imputer.transform(test_df[features])
+        encoded_data=transformer.transform(imputed_data)
         encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
