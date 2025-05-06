@@ -1,5 +1,6 @@
 '''Collection of functions to run feature engineering operations.'''
 
+from math import e
 from itertools import permutations
 from typing import Tuple
 
@@ -114,10 +115,11 @@ def log_features(
 
     for feature in features:
         if min(train_df[feature]) <= 0:
-            scaler=MinMaxScaler()
+
+            scaler=MinMaxScaler(feature_range=(1, 100))
 
             train_df[feature]=scaler.fit_transform(train_df[feature].to_frame())
-            test_df[feature]=scaler.fit_transform(test_df[feature].to_frame())
+            test_df[feature]=scaler.transform(test_df[feature].to_frame())
 
         if kwargs['base'] == '2':
             train_df[f'{feature}_log2']=np.log2(train_df[feature])
@@ -133,6 +135,7 @@ def log_features(
 
     return train_df, test_df
 
+
 def ratio_features(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
@@ -147,22 +150,43 @@ def ratio_features(
 
     for feature_a, feature_b in feature_pairs:
 
-        quotient=np.divide(
+        quotient = np.divide(
             np.array(train_df[feature_a]),
             np.array(train_df[feature_b]),
             out=np.array([kwargs['div_zero_value']]*len(train_df[feature_a])),
-            where=train_df[feature_b]!=0
+            where=np.array(train_df[feature_b]) != 0
         )
 
         train_df[f'{feature_a}_over_{feature_b}'] = quotient
 
-        quotient=np.divide(
+        quotient = np.divide(
             np.array(test_df[feature_a]),
             np.array(test_df[feature_b]),
             out=np.array([kwargs['div_zero_value']]*len(test_df[feature_a])),
-            where=test_df[feature_b]!=0
+            where=np.array(test_df[feature_b]) != 0
         )
 
         test_df[f'{feature_a}_over_{feature_b}'] = quotient
+
+    return train_df, test_df
+
+
+def exponential_features(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    'Adds exponential features with base 2 or base e.'
+
+    for feature in features:
+        if kwargs['base'] == 'e':
+            train_df[f'{feature}_exp_base_e']=e**train_df[feature]
+            test_df[f'{feature}_exp_base_e']=e**test_df[feature]
+
+        elif kwargs['base'] == '2':
+            train_df[f'{feature}_exp_base_e']=2**train_df[feature]
+            test_df[f'{feature}_exp_base_e']=2**test_df[feature]
 
     return train_df, test_df

@@ -193,7 +193,7 @@ class TestFeatureMethods(unittest.TestCase):
 
 
     def test_onehot_encoding(self):
-        '''Tests onehot encoder.'''
+        '''Tests string features onehot encoder.'''
 
         train_df, test_df=fm.onehot_encoding(
             self.dummy_df.copy(),
@@ -207,7 +207,7 @@ class TestFeatureMethods(unittest.TestCase):
 
 
     def test_ordinal_encoding(self):
-        '''Tests onehot encoder.'''
+        '''Tests string feature ordinal encoder.'''
 
         train_df, test_df=fm.ordinal_encoding(
             self.dummy_df.copy(),
@@ -224,7 +224,7 @@ class TestFeatureMethods(unittest.TestCase):
 
 
     def test_poly_features(self):
-        '''Tests onehot encoder.'''
+        '''Tests polynomial feature transformer.'''
 
         train_df, test_df=fm.poly_features(
             self.dummy_df.copy(),
@@ -239,7 +239,7 @@ class TestFeatureMethods(unittest.TestCase):
 
 
     def test_spline_features(self):
-        '''Tests onehot encoder.'''
+        '''Tests spline features transformer.'''
 
         train_df, test_df=fm.spline_features(
             self.dummy_df.copy(),
@@ -286,15 +286,38 @@ class TestFeatureMethods(unittest.TestCase):
         self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
-
     def test_ratio_features(self):
-        '''Tests log features transformer.'''
+        '''Tests ratio feature transformer.'''
 
         train_df, test_df=fm.ratio_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             ['feature1', 'feature2'],
             {'div_zero_value': np.nan}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+    def test_exponential_features(self):
+        '''Tests exponential features transformer.'''
+
+        train_df, test_df=fm.exponential_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'base': 'e'}
+        )
+
+        self.assertTrue(isinstance(train_df, pd.DataFrame))
+        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        train_df, test_df=fm.exponential_features(
+            self.dummy_df.copy(),
+            self.dummy_df.copy(),
+            ['feature1', 'feature2'],
+            {'base': '2'}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

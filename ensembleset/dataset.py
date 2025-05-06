@@ -74,6 +74,9 @@ class DataSet:
             },
             'ratio_features':{
                 'div_zero_value': [np.nan]
+            },
+            'exponential_features':{
+                'base': ['2', 'e']
             }
         }
 
