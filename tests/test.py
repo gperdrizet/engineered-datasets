@@ -22,6 +22,7 @@ class TestDataSetInit(unittest.TestCase):
         })
 
         self.dataset_without_string_feature = ds.DataSet(
+            'feature2',
             self.dummy_df_without_strings,
             test_data=self.dummy_df_without_strings
         )
@@ -33,6 +34,7 @@ class TestDataSetInit(unittest.TestCase):
         })
 
         self.dataset_with_string_feature = ds.DataSet(
+            'feature2',
             self.dummy_df_with_strings,
             test_data=self.dummy_df_with_strings,
             string_features=['feature3']
@@ -42,6 +44,7 @@ class TestDataSetInit(unittest.TestCase):
     def test_class_arguments(self):
         '''Tests assignments of class attributes from user arguments.'''
 
+        self.assertTrue(isinstance(self.dataset_with_string_feature.label, str))
         self.assertTrue(isinstance(self.dataset_with_string_feature.train_data, pd.DataFrame))
         self.assertTrue(isinstance(self.dataset_with_string_feature.test_data, pd.DataFrame))
         self.assertTrue(isinstance(self.dataset_with_string_feature.string_features, list))
@@ -49,6 +52,15 @@ class TestDataSetInit(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             ds.DataSet(
+                2,
+                self.dummy_df_with_strings,
+                test_data=self.dummy_df_with_strings,
+                string_features=['feature3']
+            )
+
+        with self.assertRaises(TypeError):
+            ds.DataSet(
+                'feature2',
                 'Not a Pandas Dataframe',
                 test_data=self.dummy_df_with_strings,
                 string_features=['feature3']
@@ -56,6 +68,7 @@ class TestDataSetInit(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             ds.DataSet(
+                'feature2',
                 self.dummy_df_with_strings,
                 test_data='Not a Pandas Dataframe',
                 string_features=['feature3']
@@ -63,6 +76,7 @@ class TestDataSetInit(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             ds.DataSet(
+                'feature2',
                 self.dummy_df_with_strings,
                 test_data=self.dummy_df_with_strings,
                 string_features='Not a list of features'
@@ -98,6 +112,7 @@ class TestDataPipelineGen(unittest.TestCase):
         })
 
         self.dataset = ds.DataSet(
+            'feature2',
             self.dummy_df,
             test_data=self.dummy_df,
             string_features=['feature3']
@@ -129,6 +144,7 @@ class TestFeatureSelection(unittest.TestCase):
         })
 
         self.dataset = ds.DataSet(
+            'feature2',
             self.dummy_df,
             test_data=self.dummy_df,
             string_features=['feature3']
@@ -138,12 +154,14 @@ class TestFeatureSelection(unittest.TestCase):
     def test_select_features(self):
         '''Tests feature selection function.'''
 
-        features=self.dataset._select_features(2, self.dummy_df)
+        features=self.dataset._select_features(3, self.dummy_df)
 
         self.assertEqual(len(features), 2)
 
         for feature in features:
             self.assertTrue(isinstance(feature, str))
+
+        self.assertFalse('feature2' in features)
 
 
 class TestDatasetGeneration(unittest.TestCase):
@@ -159,6 +177,7 @@ class TestDatasetGeneration(unittest.TestCase):
         })
 
         self.dataset = ds.DataSet(
+            'feature2',
             self.dummy_df,
             test_data=self.dummy_df,
             string_features=['feature3']

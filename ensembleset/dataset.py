@@ -16,12 +16,19 @@ class DataSet:
 
     def __init__(
             self,
+            label: str,
             train_data: pd.DataFrame,
             test_data: pd.DataFrame = None,
             string_features: list = None
         ):
 
         # Type check the user arguments and assign them to attributes
+        if isinstance(label, str):
+            self.label = label
+
+        else:
+            raise TypeError('Label is not a string.')
+
         if isinstance(train_data, pd.DataFrame):
             train_data.columns = train_data.columns.astype(str)
             self.train_data = train_data
@@ -129,6 +136,7 @@ class DataSet:
         '''Selects a random subset of features.'''
 
         features = data_df.columns.to_list()#.astype(str).to_list()
+        features.remove(self.label)
         shuffle(features)
         features = features[:n_features]
 
