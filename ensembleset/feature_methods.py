@@ -65,12 +65,16 @@ def poly_features(
 
     transformer=PolynomialFeatures(**kwargs)
     imputer=SimpleImputer(strategy='mean')
+    scaler=MinMaxScaler(feature_range=(0, 1))
 
     imputed_data=imputer.fit_transform(train_df[features])
     encoded_data=transformer.fit_transform(imputed_data)
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
+    train_df[transformer.get_feature_names_out()]=scaler.fit_transform(
+        train_df[transformer.get_feature_names_out()]
+    )
 
     if test_df is not None:
 
@@ -79,6 +83,9 @@ def poly_features(
         encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
+        test_df[transformer.get_feature_names_out()]=scaler.fit_transform(
+            test_df[transformer.get_feature_names_out()]
+        )
 
     return train_df, test_df
 
@@ -94,12 +101,16 @@ def spline_features(
 
     transformer=SplineTransformer(**kwargs)
     imputer=SimpleImputer(strategy='mean')
+    scaler=MinMaxScaler(feature_range=(0, 1))
 
     imputed_data=imputer.fit_transform(train_df[features])
     encoded_data=transformer.fit_transform(imputed_data)
     encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
+    train_df[transformer.get_feature_names_out()]=scaler.fit_transform(
+        train_df[transformer.get_feature_names_out()]
+    )
 
     if test_df is not None:
 
@@ -108,6 +119,9 @@ def spline_features(
         encoded_df=pd.DataFrame(encoded_data, columns=transformer.get_feature_names_out())
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
+        test_df[transformer.get_feature_names_out()]=scaler.fit_transform(
+            test_df[transformer.get_feature_names_out()]
+        )
 
     return train_df, test_df
 
@@ -200,21 +214,30 @@ def exponential_features(
 
     new_train_features={}
     new_test_features={}
+    scaler=MinMaxScaler(feature_range=(0, 1))
 
     for feature in features:
         if kwargs['base'] == 'e':
             new_train_features[f'{feature}_exp_base_e'] = e**train_df[feature].astype(float)
-            new_train_features[f'{feature}_exp_base_e'] = e**test_df[feature].astype(float)
+            new_test_features[f'{feature}_exp_base_e'] = e**test_df[feature].astype(float)
 
         elif kwargs['base'] == '2':
-            new_train_features[f'{feature}_exp_base_e'] = 2**train_df[feature].astype(float)
-            new_test_features[f'{feature}_exp_base_e'] = 2**test_df[feature].astype(float)
+            new_train_features[f'{feature}_exp_base_2'] = 2**train_df[feature].astype(float)
+            new_test_features[f'{feature}_exp_base_2'] = 2**test_df[feature].astype(float)
 
     new_train_df=pd.DataFrame.from_dict(new_train_features)
     new_test_df=pd.DataFrame.from_dict(new_test_features)
 
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
+
+    train_df[list(new_train_features.keys())]=scaler.fit_transform(
+        train_df[list(new_train_features.keys())]
+    )
+
+    train_df[list(new_test_features.keys())]=scaler.fit_transform(
+        train_df[list(new_test_features.keys())]
+    )
 
     return train_df, test_df
 
