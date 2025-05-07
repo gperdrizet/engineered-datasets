@@ -49,12 +49,34 @@ class DataSet:
         else:
             raise TypeError('String features is not a list.')
 
+        # Grab the training labels
+        if self.label in self.train_data.columns:
+            self.train_labels=np.array(self.train_data[label])
+            print(f'Training labels: {self.train_labels}')
+
+        else:
+            self.train_labels=[np.nan]
+
+        # Grab the testing labels
+        if self.label in self.test_data.columns:
+            self.test_labels=np.array(self.test_data[label])
+
+        else:
+            self.test_labels=[np.nan]
+
         # Create the HDF5 output
         Path('data').mkdir(parents=True, exist_ok=True)
 
+        # Create groups for training and testing datasets
         with h5py.File('data/dataset.hdf5', 'a') as hdf:
+
             _ = hdf.require_group('train')
             _ = hdf.require_group('test')
+
+        # Add the training and testing labels
+        with h5py.File('data/dataset.hdf5', 'w') as hdf:
+            _ = hdf.create_dataset('train/labels', data=self.train_labels)
+            _ = hdf.create_dataset('test/labels', data=self.test_labels)
 
         # Define the feature engineering pipeline operations
         self.string_encodings={
@@ -135,7 +157,7 @@ class DataSet:
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
         '''Selects a random subset of features.'''
 
-        features = data_df.columns.to_list()#.astype(str).to_list()
+        features = data_df.columns.to_list()
         features.remove(self.label)
         shuffle(features)
         features = features[:n_features]

@@ -22,8 +22,8 @@ class TestDataSetInit(unittest.TestCase):
         })
 
         self.dataset_without_string_feature = ds.DataSet(
-            'feature2',
-            self.dummy_df_without_strings,
+            label='feature2',
+            train_data=self.dummy_df_without_strings,
             test_data=self.dummy_df_without_strings
         )
 
@@ -34,8 +34,8 @@ class TestDataSetInit(unittest.TestCase):
         })
 
         self.dataset_with_string_feature = ds.DataSet(
-            'feature2',
-            self.dummy_df_with_strings,
+            label='feature2',
+            train_data=self.dummy_df_with_strings,
             test_data=self.dummy_df_with_strings,
             string_features=['feature3']
         )
@@ -49,6 +49,8 @@ class TestDataSetInit(unittest.TestCase):
         self.assertTrue(isinstance(self.dataset_with_string_feature.test_data, pd.DataFrame))
         self.assertTrue(isinstance(self.dataset_with_string_feature.string_features, list))
         self.assertEqual(self.dataset_with_string_feature.string_features[0], 'feature3')
+        self.assertEqual(self.dataset_without_string_feature.train_labels[-1], 4)
+        self.assertEqual(self.dataset_without_string_feature.test_labels[-1], 4)
 
         with self.assertRaises(TypeError):
             ds.DataSet(
@@ -83,13 +85,62 @@ class TestDataSetInit(unittest.TestCase):
             )
 
 
+    def test_label_assignment(self):
+        '''Tests assigning and saving labels.'''
+
+        dataset=ds.DataSet(
+            'feature2',
+            self.dummy_df_with_strings,
+            test_data=self.dummy_df_with_strings,
+            string_features=['feature3']
+        )
+
+        self.assertEqual(dataset.train_labels[-1], 4)
+        self.assertEqual(dataset.test_labels[-1], 4)
+
+        dataset=ds.DataSet(
+            'feature7',
+            self.dummy_df_with_strings,
+            test_data=self.dummy_df_with_strings,
+            string_features=['feature3']
+        )
+
+        self.assertTrue(np.isnan(dataset.train_labels[-1]))
+        self.assertTrue(np.isnan(dataset.test_labels[-1]))
+
+
     def test_output_creation(self):
         '''Tests the creation of the HDF5 output sink.'''
+
+        _=ds.DataSet(
+            'feature2',
+            self.dummy_df_with_strings,
+            test_data=self.dummy_df_with_strings,
+            string_features=['feature3']
+        )
 
         hdf = h5py.File('data/dataset.hdf5', 'a')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
+        self.assertEqual(hdf['test/labels'][-1], 4)
+
+        hdf.close()
+
+        _=ds.DataSet(
+            'feature7',
+            self.dummy_df_with_strings,
+            test_data=self.dummy_df_with_strings,
+            string_features=['feature3']
+        )
+
+        hdf = h5py.File('data/dataset.hdf5', 'a')
+
+        self.assertTrue('train' in hdf)
+        self.assertTrue('test' in hdf)
+        self.assertTrue(np.isnan(hdf['test/labels'][-1]))
+
+        hdf.close()
 
 
     def test_pipeline_options(self):
