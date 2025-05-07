@@ -198,14 +198,23 @@ def exponential_features(
 
     '''Adds exponential features with base 2 or base e.'''
 
+    new_train_features={}
+    new_test_features={}
+
     for feature in features:
         if kwargs['base'] == 'e':
-            train_df[f'{feature}_exp_base_e'] = e**train_df[feature].astype(float)
-            test_df[f'{feature}_exp_base_e'] = e**test_df[feature].astype(float)
+            new_train_features[f'{feature}_exp_base_e'] = e**train_df[feature].astype(float)
+            new_train_features[f'{feature}_exp_base_e'] = e**test_df[feature].astype(float)
 
         elif kwargs['base'] == '2':
-            train_df[f'{feature}_exp_base_e'] = 2**train_df[feature].astype(float)
-            test_df[f'{feature}_exp_base_e'] = 2**test_df[feature].astype(float)
+            new_train_features[f'{feature}_exp_base_e'] = 2**train_df[feature].astype(float)
+            new_test_features[f'{feature}_exp_base_e'] = 2**test_df[feature].astype(float)
+
+    new_train_df=pd.DataFrame.from_dict(new_train_features)
+    new_test_df=pd.DataFrame.from_dict(new_test_features)
+
+    train_df=pd.concat([train_df, new_train_df], axis=1)
+    test_df=pd.concat([test_df, new_test_df], axis=1)
 
     return train_df, test_df
 
@@ -239,8 +248,8 @@ def sum_features(
             train_sum += train_df[addend]
             test_sum += test_df[addend]
 
-        new_test_features[f'sum_feature_{i}'] = train_sum
-        new_train_features[f'sum_feature_{i}'] = test_sum
+        new_train_features[f'sum_feature_{i}'] = train_sum
+        new_test_features[f'sum_feature_{i}'] = test_sum
 
     new_train_df=pd.DataFrame.from_dict(new_train_features)
     new_test_df=pd.DataFrame.from_dict(new_test_features)
