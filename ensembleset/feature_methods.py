@@ -266,6 +266,8 @@ def difference_features(
     else:
         n_subtrahends=kwargs['n_subtrahends']
 
+    new_test_features={}
+    new_train_features={}
     subtrahend_sets=combinations(features, n_subtrahends)
 
     for i, subtrahend_set in enumerate(subtrahend_sets):
@@ -278,7 +280,13 @@ def difference_features(
             train_difference -= train_df[subtrahend]
             test_difference -= test_df[subtrahend]
 
-        train_df[f'difference_feature_{i}'] = train_difference
-        test_df[f'difference_feature_{i}'] = test_difference
+        new_train_features[f'difference_feature_{i}'] = train_difference
+        new_test_features[f'difference_feature_{i}'] = test_difference
+
+    new_train_df=pd.DataFrame.from_dict(new_train_features)
+    new_test_df=pd.DataFrame.from_dict(new_test_features)
+
+    train_df=pd.concat([train_df, new_train_df], axis=1)
+    test_df=pd.concat([test_df, new_test_df], axis=1)
 
     return train_df, test_df
