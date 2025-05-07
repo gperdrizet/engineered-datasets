@@ -200,12 +200,12 @@ def exponential_features(
 
     for feature in features:
         if kwargs['base'] == 'e':
-            train_df[f'{feature}_exp_base_e'] = e**train_df[feature]
-            test_df[f'{feature}_exp_base_e'] = e**test_df[feature]
+            train_df[f'{feature}_exp_base_e'] = e**train_df[feature].astype(float)
+            test_df[f'{feature}_exp_base_e'] = e**test_df[feature].astype(float)
 
         elif kwargs['base'] == '2':
-            train_df[f'{feature}_exp_base_e'] = 2**train_df[feature]
-            test_df[f'{feature}_exp_base_e'] = 2**test_df[feature]
+            train_df[f'{feature}_exp_base_e'] = 2**train_df[feature].astype(float)
+            test_df[f'{feature}_exp_base_e'] = 2**test_df[feature].astype(float)
 
     return train_df, test_df
 

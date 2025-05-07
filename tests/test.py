@@ -256,9 +256,9 @@ class TestFeatureMethods(unittest.TestCase):
         '''Dummy DataFrames for tests.'''
 
         self.dummy_df = pd.DataFrame({
-            'feature1': [0,1],
-            'feature2': [3,4],
-            'feature3': ['a', 'b']
+            'feature1': [-1,0,1,2],
+            'feature2': [3,4,5,np.nan],
+            'feature3': ['a', 'b', 'c', 'd']
         })
 
 
@@ -314,7 +314,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.spline_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature2'],
+            ['feature1', 'feature2'],
             {'n_knots': 2}
         )
 
