@@ -119,7 +119,7 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['feature3']
         )
 
-        hdf = h5py.File('data/dataset.hdf5', 'a')
+        hdf = h5py.File('data/dataset.h5', 'a')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -134,7 +134,7 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['feature3']
         )
 
-        hdf = h5py.File('data/dataset.hdf5', 'a')
+        hdf = h5py.File('data/dataset.h5', 'a')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -240,7 +240,7 @@ class TestDatasetGeneration(unittest.TestCase):
     def test_make_datasets(self):
         '''Tests generation of datasets.'''
 
-        hdf = h5py.File('data/dataset.hdf5', 'a')
+        hdf = h5py.File('data/dataset.h5', 'a')
 
         training_datasets=hdf['train']
         self.assertEqual(len(training_datasets), 2)

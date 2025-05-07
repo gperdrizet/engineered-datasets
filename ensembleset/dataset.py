@@ -73,7 +73,7 @@ class DataSet:
             _ = hdf.require_group('test')
 
         # Add the training and testing labels
-        with h5py.File('data/dataset.hdf5', 'w') as hdf:
+        with h5py.File('data/dataset.h5', 'w') as hdf:
             _ = hdf.create_dataset('train/labels', data=self.train_labels)
             _ = hdf.create_dataset('test/labels', data=self.test_labels)
 
@@ -118,7 +118,7 @@ class DataSet:
     def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
-        hdf = h5py.File('data/dataset.hdf5', 'w')
+        hdf = h5py.File('data/dataset.h5', 'w')
 
         for n in range(n_datasets):
 
@@ -129,7 +129,7 @@ class DataSet:
             pipeline = self._generate_data_pipeline(n_steps)
 
             for operation, arguments in pipeline.items():
-                
+
                 print(f' Applying {operation}')
                 func = getattr(fm, operation)
 
