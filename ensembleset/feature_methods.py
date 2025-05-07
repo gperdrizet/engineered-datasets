@@ -225,6 +225,8 @@ def sum_features(
     else:
         n_addends=kwargs['n_addends']
 
+    new_test_features={}
+    new_train_features={}
     addend_sets=combinations(features, n_addends)
 
     for i, addend_set in enumerate(addend_sets):
@@ -237,8 +239,14 @@ def sum_features(
             train_sum += train_df[addend]
             test_sum += test_df[addend]
 
-        train_df[f'sum_feature_{i}'] = train_sum
-        test_df[f'sum_feature_{i}'] = test_sum
+        new_test_features[f'sum_feature_{i}'] = train_sum
+        new_train_features[f'sum_feature_{i}'] = test_sum
+
+    new_train_df=pd.DataFrame.from_dict(new_train_features)
+    new_test_df=pd.DataFrame.from_dict(new_test_features)
+
+    train_df=pd.concat([train_df, new_train_df], axis=1)
+    test_df=pd.concat([test_df, new_test_df], axis=1)
 
     return train_df, test_df
 

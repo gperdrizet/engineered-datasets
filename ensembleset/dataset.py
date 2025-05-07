@@ -52,7 +52,6 @@ class DataSet:
         # Grab the training labels
         if self.label in self.train_data.columns:
             self.train_labels=np.array(self.train_data[label])
-            print(f'Training labels: {self.train_labels}')
 
         else:
             self.train_labels=[np.nan]
