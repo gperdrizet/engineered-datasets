@@ -67,7 +67,7 @@ class DataSet:
         Path('data').mkdir(parents=True, exist_ok=True)
 
         # Create groups for training and testing datasets
-        with h5py.File('data/dataset.hdf5', 'a') as hdf:
+        with h5py.File('data/dataset.h5', 'a') as hdf:
 
             _ = hdf.require_group('train')
             _ = hdf.require_group('test')
