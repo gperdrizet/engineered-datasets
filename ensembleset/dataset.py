@@ -122,11 +122,15 @@ class DataSet:
 
         for n in range(n_datasets):
 
+            print(f'\nGenerating dataset {n+1} of {n_datasets}')
+
             train_df = self.train_data.copy()
             test_df = self.test_data.copy()
             pipeline = self._generate_data_pipeline(n_steps)
 
             for operation, arguments in pipeline.items():
+                
+                print(f' Applying {operation}')
                 func = getattr(fm, operation)
 
                 if operation in self.string_encodings:
