@@ -1,8 +1,6 @@
-ensembleset
 h5py
 pandas
 scikit-learn
-ipykernel
 hatchling
 twine
 build
