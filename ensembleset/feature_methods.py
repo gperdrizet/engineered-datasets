@@ -116,6 +116,9 @@ def poly_features(
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
 
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
     return train_df, test_df
 
 
@@ -180,6 +183,9 @@ def spline_features(
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
 
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
     return train_df, test_df
 
 
@@ -227,11 +233,10 @@ def log_features(
     train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
     test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
 
-
     for feature in numeric_features:
         if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
 
-            scaler=MinMaxScaler(feature_range=(1, 100))
+            scaler=MinMaxScaler(feature_range=(1, 10))
 
             train_working_df[feature]=scaler.fit_transform(train_working_df[feature].to_frame())
             test_working_df[feature]=scaler.transform(test_working_df[feature].to_frame())
@@ -247,6 +252,9 @@ def log_features(
         if kwargs['base'] == '10':
             train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
             test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
+
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
 
@@ -326,6 +334,9 @@ def ratio_features(
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
 
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
     return train_df, test_df
 
 
@@ -374,9 +385,15 @@ def exponential_features(
 
     new_train_features={}
     new_test_features={}
-    scaler=MinMaxScaler(feature_range=(0, 1))
 
     for feature in numeric_features:
+        if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
+
+            scaler=MinMaxScaler(feature_range=(1, 10))
+
+            train_working_df[feature]=scaler.fit_transform(train_working_df[feature].to_frame())
+            test_working_df[feature]=scaler.transform(test_working_df[feature].to_frame())
+
         if kwargs['base'] == 'e':
             new_train_features[f'{feature}_exp_base_e'] = e**train_working_df[feature].astype(float)
             new_test_features[f'{feature}_exp_base_e'] = e**test_working_df[feature].astype(float)
@@ -391,13 +408,8 @@ def exponential_features(
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
 
-    train_df[list(new_train_features.keys())]=scaler.fit_transform(
-        train_df[list(new_train_features.keys())]
-    )
-
-    train_df[list(new_test_features.keys())]=scaler.fit_transform(
-        train_df[list(new_test_features.keys())]
-    )
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
 
@@ -474,6 +486,9 @@ def sum_features(
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
 
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
     return train_df, test_df
 
 
@@ -548,5 +563,8 @@ def difference_features(
 
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
+
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
