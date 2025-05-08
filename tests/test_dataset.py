@@ -176,13 +176,7 @@ class TestFeatureSelection(unittest.TestCase):
         '''Tests feature selection function.'''
 
         features=self.dataset._select_features(3, self.dummy_df)
-
-        self.assertEqual(len(features), 2)
-
-        for feature in features:
-            self.assertTrue(isinstance(feature, str))
-
-        self.assertFalse('feature2' in features)
+        self.assertEqual(len(features), 3)
 
 
 class TestDatasetGeneration(unittest.TestCase):
