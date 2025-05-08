@@ -213,7 +213,7 @@ class TestDatasetGeneration(unittest.TestCase):
         hdf = h5py.File('data/dataset.h5', 'a')
 
         training_datasets=hdf['train']
-        self.assertEqual(len(training_datasets), 2)
+        self.assertEqual(len(training_datasets), 3)
 
         testing_datasets=hdf['test']
-        self.assertEqual(len(testing_datasets), 2)
+        self.assertEqual(len(testing_datasets), 3)
