@@ -84,49 +84,47 @@ class DataSet:
     def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
-        hdf = h5py.File('data/dataset.h5', 'w')
+        with h5py.File('data/dataset.h5', 'a') as hdf:
 
-        # Generate n datasets
-        for n in range(n_datasets):
+            # Generate n datasets
+            for n in range(n_datasets):
 
-            print(f'\nGenerating dataset {n+1} of {n_datasets}')
+                print(f'\nGenerating dataset {n+1} of {n_datasets}')
 
-            # Take a copy of the training and test data
-            train_df = self.train_data.copy()
-            test_df = self.test_data.copy()
+                # Take a copy of the training and test data
+                train_df = self.train_data.copy()
+                test_df = self.test_data.copy()
 
-            # Generate a data pipeline
-            pipeline = self._generate_data_pipeline(n_steps)
+                # Generate a data pipeline
+                pipeline = self._generate_data_pipeline(n_steps)
 
-            # Loop on and apply each method in the pipeline
-            for method, arguments in pipeline.items():
+                # Loop on and apply each method in the pipeline
+                for method, arguments in pipeline.items():
 
-                print(f' Applying {method}')
-                func = getattr(fm, method)
+                    print(f' Applying {method}')
+                    func = getattr(fm, method)
 
-                if method in self.string_encodings:
-                    train_df, test_df = func(
-                        train_df,
-                        test_df,
-                        self.string_features,
-                        arguments
-                    )
+                    if method in self.string_encodings:
+                        train_df, test_df = func(
+                            train_df,
+                            test_df,
+                            self.string_features,
+                            arguments
+                        )
 
-                else:
-                    features = self._select_features(n_features, train_df)
+                    else:
+                        features = self._select_features(n_features, train_df)
 
-                    train_df, test_df = func(
-                        train_df,
-                        test_df,
-                        features,
-                        arguments
-                    )
+                        train_df, test_df = func(
+                            train_df,
+                            test_df,
+                            features,
+                            arguments
+                        )
 
-            # Save the results to HDF5 output
-            _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df))
-            _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df))
-
-        hdf.close()
+                # Save the results to HDF5 output
+                _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df))
+                _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df))
 
 
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
