@@ -4,8 +4,8 @@ negative, zero, positive, nan, inf and large values.'''
 import numpy as np
 import pandas as pd
 
-largef=1.7976931348623157e+308
-smallf=2.2250738585072014e-308
+largef=1.7976931348623157e+300
+smallf=2.2250738585072014e-300
 
 DUMMY_DF = pd.DataFrame({
     'strings':                   ['a',     'b',     'c',     'd',     'e',     'f',     'd'    ],

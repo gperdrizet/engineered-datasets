@@ -49,7 +49,6 @@ class DataSet:
         if self.label in self.train_data.columns:
             self.train_labels=np.array(self.train_data[label])
             self.train_data.drop(self.label, axis=1, inplace=True)
-            print(f'Assigned train labels {self.label}: {self.train_labels}')
 
         else:
             self.train_labels=[np.nan] * len(self.train_data)
@@ -59,7 +58,6 @@ class DataSet:
         if self.label in self.test_data.columns:
             self.test_labels=np.array(self.test_data[label])
             self.test_data.drop(self.label, axis=1, inplace=True)
-            print(f'Assigned test labels {self.label}: {self.test_labels}')
 
         else:
             self.test_labels=[np.nan] * len(self.test_data)

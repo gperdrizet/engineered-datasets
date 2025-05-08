@@ -3,7 +3,11 @@
 import unittest
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_string_dtype
+from pandas.api.types import is_numeric_dtype
+
 import ensembleset.feature_methods as fm
+import tests.dummy_dataframe as test_data
 
 
 class TestFeatureMethods(unittest.TestCase):
@@ -12,11 +16,7 @@ class TestFeatureMethods(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames for tests.'''
 
-        self.dummy_df = pd.DataFrame({
-            'feature1': [-1,0,1,2],
-            'feature2': [3,4,5,np.nan],
-            'feature3': ['a', 'b', 'c', 'd']
-        })
+        self.dummy_df = test_data.DUMMY_DF
 
 
     def test_onehot_encoding(self):
@@ -25,12 +25,18 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.onehot_encoding(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature3'],
+            ['strings'],
             {'sparse_output': False}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
         self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        for feature in list(train_df.columns):
+            self.assertTrue(is_numeric_dtype(train_df[feature]))
+
+        for feature in list(test_df.columns):
+            self.assertTrue(is_numeric_dtype(test_df[feature]))
 
 
     def test_ordinal_encoding(self):
@@ -39,7 +45,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.ordinal_encoding(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature3'],
+            ['strings'],
             {
                 'handle_unknown': 'use_encoded_value',
                 'unknown_value': np.nan  
@@ -48,6 +54,8 @@ class TestFeatureMethods(unittest.TestCase):
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
         self.assertTrue(isinstance(test_df, pd.DataFrame))
+        self.assertFalse(is_string_dtype(train_df['strings']))
+        self.assertFalse(is_string_dtype(test_df['strings']))
 
 
     def test_poly_features(self):
@@ -56,7 +64,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.poly_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature2'],
+            list(self.dummy_df.columns),
             {'degree': 2}
 
         )
@@ -71,7 +79,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.spline_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'n_knots': 2}
         )
 
@@ -85,7 +93,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.log_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1'],
+            list(self.dummy_df.columns),
             {'base': '2'}
         )
 
@@ -95,7 +103,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.log_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1'],
+            list(self.dummy_df.columns),
             {'base': 'e'}
         )
 
@@ -105,7 +113,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.log_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1'],
+            list(self.dummy_df.columns),
             {'base': '10'}
         )
 
@@ -119,7 +127,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.ratio_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'div_zero_value': np.nan}
         )
 
@@ -133,7 +141,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.exponential_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'base': 'e'}
         )
 
@@ -143,7 +151,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.exponential_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'base': '2'}
         )
 
@@ -157,7 +165,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.sum_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'n_addends': 2}
         )
 
@@ -167,7 +175,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.sum_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'n_addends': 4}
         )
 
@@ -181,7 +189,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.difference_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'n_subtrahends': 2}
         )
 
@@ -191,7 +199,7 @@ class TestFeatureMethods(unittest.TestCase):
         train_df, test_df=fm.difference_features(
             self.dummy_df.copy(),
             self.dummy_df.copy(),
-            ['feature1', 'feature2'],
+            list(self.dummy_df.columns),
             {'n_subtrahends': 4}
         )
 

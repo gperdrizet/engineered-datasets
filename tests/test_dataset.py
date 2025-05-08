@@ -70,8 +70,6 @@ class TestDataSetInit(unittest.TestCase):
     def test_label_assignment(self):
         '''Tests assigning and saving labels.'''
 
-        print(f'Dataset train labels: {self.dataset.train_labels}')
-
         self.assertEqual(self.dataset.train_labels[-1], 7.0)
         self.assertEqual(self.dataset.test_labels[-1], 7.0)
 
