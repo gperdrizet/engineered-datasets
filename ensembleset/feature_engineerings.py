@@ -17,12 +17,14 @@ NUMERICAL_METHODS={
     'poly_features': {
         'degree': [2, 3],
         'interaction_only': [True, False],
+        'include_bias': [True, False]
     },
     'spline_features': {
         'n_knots': [5],
         'degree': [2, 3, 4],
         'knots': ['uniform', 'quantile'],
-        'extrapolation': ['error', 'constant', 'linear', 'continue', 'periodic']
+        'extrapolation': ['constant', 'linear', 'continue', 'periodic'],
+        'include_bias': [True, False]
     },
     'log_features': {
         'base': ['2', 'e', '10']
