@@ -34,8 +34,8 @@ class DataSet:
         # If the type check passed, assign arguments to attributes
         if type_check is True:
             self.label = label
-            self.train_data = train_data
-            self.test_data = test_data
+            self.train_data = train_data.copy()
+            self.test_data = test_data.copy()
             self.string_features = string_features
 
         # Enforce string type on DataFrame columns
