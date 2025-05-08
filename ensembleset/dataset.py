@@ -8,6 +8,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+import ensembleset.feature_engineerings as engineerings
 import ensembleset.feature_methods as fm
 
 
@@ -22,46 +23,46 @@ class DataSet:
             string_features: list = None
         ):
 
-        # Type check the user arguments and assign them to attributes
-        if isinstance(label, str):
+        # Check user argument types
+        type_check = self.check_argument_types(
+            label,
+            train_data,
+            test_data,
+            string_features
+        )
+
+        # If the type check passed, assign arguments to attributes
+        if type_check is True:
             self.label = label
-
-        else:
-            raise TypeError('Label is not a string.')
-
-        if isinstance(train_data, pd.DataFrame):
-            train_data.columns = train_data.columns.astype(str)
             self.train_data = train_data
-
-        else:
-            raise TypeError('Train data is not a Pandas DataFrame.')
-
-        if isinstance(test_data, pd.DataFrame) or test_data is None:
-            test_data.columns = test_data.columns.astype(str)
             self.test_data = test_data
-
-        else:
-            raise TypeError('Test data is not a Pandas DataFrame.')
-
-        if isinstance(string_features, list) or string_features is None:
             self.string_features = string_features
 
-        else:
-            raise TypeError('String features is not a list.')
+        # Enforce string type on DataFrame columns
+        self.train_data.columns = self.train_data.columns.astype(str)
 
-        # Grab the training labels
+        if self.test_data is not None:
+            self.test_data.columns = self.test_data.columns.astype(str)
+
+        # Retrieve and assign the training labels, set NAN if they don't exist
+        # then remove them from the training data
         if self.label in self.train_data.columns:
             self.train_labels=np.array(self.train_data[label])
+            self.train_data.drop(self.label, axis=1, inplace=True)
+            print(f'Assigned train labels {self.label}: {self.train_labels}')
 
         else:
-            self.train_labels=[np.nan]
+            self.train_labels=[np.nan] * len(self.train_data)
 
-        # Grab the testing labels
+        # Retrieve and assign the testing labels, set NAN if they don't exist
+        # then remove them from the training data
         if self.label in self.test_data.columns:
             self.test_labels=np.array(self.test_data[label])
+            self.test_data.drop(self.label, axis=1, inplace=True)
+            print(f'Assigned test labels {self.label}: {self.test_labels}')
 
         else:
-            self.test_labels=[np.nan]
+            self.test_labels=[np.nan] * len(self.test_data)
 
         # Create the HDF5 output
         Path('data').mkdir(parents=True, exist_ok=True)
@@ -77,42 +78,9 @@ class DataSet:
             _ = hdf.create_dataset('train/labels', data=self.train_labels)
             _ = hdf.create_dataset('test/labels', data=self.test_labels)
 
-        # Define the feature engineering pipeline operations
-        self.string_encodings={
-            'onehot_encoding': {'sparse_output': False},
-            'ordinal_encoding': {
-                'handle_unknown': 'use_encoded_value',
-                'unknown_value': np.nan  
-            }
-        }
-
-        self.engineerings={
-            'poly_features': {
-                'degree': [2, 3],
-                'interaction_only': [True, False],
-            },
-            'spline_features': {
-                'n_knots': [5],
-                'degree': [2, 3, 4],
-                'knots': ['uniform', 'quantile'],
-                'extrapolation': ['error', 'constant', 'linear', 'continue', 'periodic']
-            },
-            'log_features': {
-                'base': ['2', 'e', '10']
-            },
-            'ratio_features': {
-                'div_zero_value': [np.nan]
-            },
-            'exponential_features': {
-                'base': ['2', 'e']
-            },
-            'sum_features': {
-                'n_addends': [2,3,4]
-            },
-            'difference_features': {
-                'n_subtrahends': [2,3,4]
-            }
-        }
+        # Define the feature engineering pipeline methods
+        self.string_encodings=engineerings.STRING_ENCODINGS
+        self.numerical_methods=engineerings.NUMERICAL_METHODS
 
 
     def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
@@ -120,20 +88,25 @@ class DataSet:
 
         hdf = h5py.File('data/dataset.h5', 'w')
 
+        # Generate n datasets
         for n in range(n_datasets):
 
             print(f'\nGenerating dataset {n+1} of {n_datasets}')
 
+            # Take a copy of the training and test data
             train_df = self.train_data.copy()
             test_df = self.test_data.copy()
+
+            # Generate a data pipeline
             pipeline = self._generate_data_pipeline(n_steps)
 
-            for operation, arguments in pipeline.items():
+            # Loop on and apply each method in the pipeline
+            for method, arguments in pipeline.items():
 
-                print(f' Applying {operation}')
-                func = getattr(fm, operation)
+                print(f' Applying {method}')
+                func = getattr(fm, method)
 
-                if operation in self.string_encodings:
+                if method in self.string_encodings:
                     train_df, test_df = func(
                         train_df,
                         test_df,
@@ -151,6 +124,7 @@ class DataSet:
                         arguments
                     )
 
+            # Save the results to HDF5 output
             _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df))
             _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df))
 
@@ -161,7 +135,6 @@ class DataSet:
         '''Selects a random subset of features.'''
 
         features = data_df.columns.to_list()
-        features.remove(self.label)
         shuffle(features)
         features = features[:n_features]
 
@@ -180,20 +153,57 @@ class DataSet:
             selection = choice(options)
             pipeline[selection] = self.string_encodings[selection]
 
-        # Construct a random sequence of feature engineering operations
-        operations = list(self.engineerings.keys())
-        shuffle(operations)
-        operations = operations[:n_steps]
+        # Construct a random sequence of numerical feature engineering methods
+        methods = list(self.numerical_methods.keys())
+        shuffle(methods)
+        methods = methods[:n_steps]
 
-        for operation in operations:
+        for method in methods:
 
-            pipeline[operation] = {}
-            parameters = self.engineerings[operation]
+            pipeline[method] = {}
+            parameters = self.numerical_methods[method]
 
             for parameter, values in parameters.items():
 
                 value = choice(values)
-                pipeline[operation][parameter] = value
+                pipeline[method][parameter] = value
 
         return pipeline
 
+
+    def check_argument_types(self,
+            label: str,
+            train_data: pd.DataFrame,
+            test_data: pd.DataFrame = None,
+            string_features: list = None
+    ) -> bool:
+
+        '''Checks user argument types, returns true or false for all passing.'''
+
+        check_pass = False
+
+        if isinstance(label, str):
+            check_pass = True
+
+        else:
+            raise TypeError('Label is not a string.')
+
+        if isinstance(train_data, pd.DataFrame):
+            check_pass = True
+
+        else:
+            raise TypeError('Train data is not a Pandas DataFrame.')
+
+        if isinstance(test_data, pd.DataFrame) or test_data is None:
+            check_pass = True
+
+        else:
+            raise TypeError('Test data is not a Pandas DataFrame.')
+
+        if isinstance(string_features, list) or string_features is None:
+            check_pass = True
+
+        else:
+            raise TypeError('String features is not a list.')
+
+        return check_pass
