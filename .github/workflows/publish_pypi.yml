@@ -37,7 +37,9 @@ jobs:
           python -m build
 
       - name: Test with unittest
-        run: python -m unittest tests/test.py
+        run: |
+          python -m unittest tests/test_dataset.py
+          python -m unittest tests/test_feature_methods.py
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
