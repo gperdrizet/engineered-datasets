@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer
+from sklearn.neighbors import KernelDensity
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer, KBinsDiscretizer
 
 
 def onehot_encoding(
@@ -563,6 +564,131 @@ def difference_features(
 
     train_df=pd.concat([train_df, new_train_df], axis=1)
     test_df=pd.concat([test_df, new_test_df], axis=1)
+
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
+    return train_df, test_df
+
+
+def kde_smoothing(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Uses kernel density estimation to smooth features.'''
+
+    # Exclude string features if present
+    numeric_features=[]
+    for feature in features:
+        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
+            numeric_features.append(feature)
+
+    train_working_df=train_df.copy()
+    test_working_df=test_df.copy()
+
+    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
+    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
+
+    # Get rid of np.inf
+    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+
+    # Get rid of large values
+    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
+        train_working_df[numeric_features] > 5.0*10**102
+    )
+    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
+        test_working_df[numeric_features] > 5.0*10**102
+    )
+
+    imputer=SimpleImputer(strategy='mean')
+    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
+    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
+
+    new_test_features={}
+    new_train_features={}
+
+    for feature in numeric_features:
+        kde = KernelDensity(**kwargs).fit(train_working_df[feature].to_numpy().reshape(-1, 1))
+        new_train_features[f'{feature}_kde']=kde.score_samples(
+            train_working_df[feature].to_numpy().reshape(-1, 1)
+        )
+        new_test_features[f'{feature}_kde']=kde.score_samples(
+            test_working_df[feature].to_numpy().reshape(-1, 1)
+        )
+
+    new_train_df=pd.DataFrame.from_dict(new_train_features)
+    new_test_df=pd.DataFrame.from_dict(new_test_features)
+
+    train_df=pd.concat([train_df, new_train_df], axis=1)
+    test_df=pd.concat([test_df, new_test_df], axis=1)
+
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
+    return train_df, test_df
+
+def kbins_quantization(
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        features:list,
+        kwargs:dict
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Discretizes feature with Kbins quantization.'''
+
+    # Exclude string features if present
+    numeric_features=[]
+    for feature in features:
+        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
+            numeric_features.append(feature)
+
+    train_working_df=train_df.copy()
+    test_working_df=test_df.copy()
+
+    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
+    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
+
+    # Get rid of np.inf
+    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+
+    # Get rid of large values
+    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
+        train_working_df[numeric_features] > 5.0*10**102
+    )
+    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
+        test_working_df[numeric_features] > 5.0*10**102
+    )
+
+    imputer=SimpleImputer(strategy='mean')
+    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
+    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
+
+    new_test_features={}
+    new_train_features={}
+
+    kbins = KBinsDiscretizer(**kwargs)
+
+    train_working_df[numeric_features] = kbins.fit_transform(train_working_df[numeric_features])
+
+    if test_df is not None:
+        train_working_df[numeric_features] = kbins.transform(train_working_df[numeric_features])
 
     train_df.dropna(axis=1, how='all', inplace=True)
     test_df.dropna(axis=1, how='all', inplace=True)

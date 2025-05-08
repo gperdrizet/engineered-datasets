@@ -40,5 +40,14 @@ NUMERICAL_METHODS={
     },
     'difference_features': {
         'n_subtrahends': [2,3,4]
+    },
+    'kde_smoothing': {
+        'kernel': ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine'],
+        'bandwidth': ['scott', 'silverman']
+    },
+    'kbins_quantization': {
+        'n_bins': [16,32,64,128,256],
+        'encode': ['ordinal'],
+        'strategy': ['uniform', 'quantile', 'kmeans']
     }
 }
