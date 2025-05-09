@@ -720,19 +720,12 @@ def remove_constants(
 
     '''Removes constant valued features.'''
 
-    for feature in features:
-        if test_df is not None:
-            if train_df[feature].nunique(dropna=False) == 1 or test_df[feature].nunique(dropna=False) == 1:
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                test_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+    train_df = train_df.loc[:,train_df.nunique(dropna=False) != 1]
 
-        elif test_df is None:
-            if train_df[feature].nunique(dropna=False) == 1:
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+    if test_df is None:
+        test_df = test_df.loc[:,test_df.nunique(dropna=False) != 1]
 
-    return features, train_df, test_df
+    return train_df, test_df
 
 
 def add_new_features(
