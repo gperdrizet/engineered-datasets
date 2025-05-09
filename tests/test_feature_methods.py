@@ -22,189 +22,249 @@ class TestFeatureMethods(unittest.TestCase):
     def test_onehot_encoding(self):
         '''Tests string features onehot encoder.'''
 
-        train_df, test_df=fm.onehot_encoding(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            ['strings'],
-            {'sparse_output': False}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            train_df, test_df=fm.onehot_encoding(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=['strings'],
+                kwargs={'sparse_output': False}
+            )
 
-        for feature in list(train_df.columns):
-            self.assertTrue(is_numeric_dtype(train_df[feature]))
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
 
-        for feature in list(test_df.columns):
-            self.assertTrue(is_numeric_dtype(test_df[feature]))
+            for feature in list(train_df.columns):
+                self.assertTrue(is_numeric_dtype(train_df[feature]))
+
+            if testing_data is not None:
+
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+                for feature in list(test_df.columns):
+                    self.assertTrue(is_numeric_dtype(test_df[feature]))
+
+            elif testing_data is None:
+                self.assertEqual(test_df, None)
 
 
     def test_ordinal_encoding(self):
         '''Tests string feature ordinal encoder.'''
 
-        train_df, test_df=fm.ordinal_encoding(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            ['strings'],
-            {
-                'handle_unknown': 'use_encoded_value',
-                'unknown_value': np.nan  
-            }
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
-        self.assertFalse(is_string_dtype(train_df['strings']))
-        self.assertFalse(is_string_dtype(test_df['strings']))
+            train_df, test_df=fm.ordinal_encoding(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=['strings'],
+                kwargs={
+                    'handle_unknown': 'use_encoded_value',
+                    'unknown_value': np.nan  
+                }
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+            self.assertFalse(is_string_dtype(train_df['strings']))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
+                self.assertFalse(is_string_dtype(test_df['strings']))
 
 
     def test_poly_features(self):
         '''Tests polynomial feature transformer.'''
 
-        train_df, test_df=fm.poly_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'degree': 2}
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        )
+            train_df, test_df=fm.poly_features(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=list(self.dummy_df.columns),
+                kwargs={'degree': 2}
+            )
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_spline_features(self):
         '''Tests spline features transformer.'''
 
-        train_df, test_df=fm.spline_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'n_knots': 2}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            train_df, test_df=fm.spline_features(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=list(self.dummy_df.columns),
+                kwargs={'n_knots': 2}
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_log_features(self):
         '''Tests log features transformer.'''
 
-        train_df, test_df=fm.log_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'base': '2'}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            train_df, test_df=fm.log_features(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=list(self.dummy_df.columns),
+                kwargs={'base': '2'}
+            )
 
-        train_df, test_df=fm.log_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'base': 'e'}
-        )
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
 
-        train_df, test_df=fm.log_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'base': '10'}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
 
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+            train_df, test_df=fm.log_features(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=list(self.dummy_df.columns),
+                kwargs={'base': 'e'}
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.log_features(
+                train_df=self.dummy_df.copy(),
+                test_df=testing_data,
+                features=list(self.dummy_df.columns),
+                kwargs={'base': '10'}
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_ratio_features(self):
         '''Tests ratio feature transformer.'''
 
-        train_df, test_df=fm.ratio_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'div_zero_value': np.nan}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.ratio_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'div_zero_value': np.nan}
+            )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        if testing_data is not None:
+            self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_exponential_features(self):
         '''Tests exponential features transformer.'''
 
-        train_df, test_df=fm.exponential_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'base': 'e'}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.exponential_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'base': 'e'}
+            )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
-        train_df, test_df=fm.exponential_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'base': '2'}
-        )
+        if testing_data is not None:
+            self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.exponential_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'base': '2'}
+            )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        if testing_data is not None:
+            self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_sum_features(self):
         '''Tests sum features transformer.'''
 
-        train_df, test_df=fm.sum_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'n_addends': 2}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.sum_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'n_addends': 2}
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.sum_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'n_addends': 4}
+            )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
-        train_df, test_df=fm.sum_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'n_addends': 4}
-        )
-
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+        if testing_data is not None:
+            self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_difference_features(self):
         '''Tests difference features transformer.'''
 
-        train_df, test_df=fm.difference_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'n_subtrahends': 2}
-        )
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.difference_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'n_subtrahends': 2}
+            )
+
+            self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+            if testing_data is not None:
+                self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+        for testing_data in [None, self.dummy_df.copy()]:
+
+            train_df, test_df=fm.difference_features(
+                self.dummy_df.copy(),
+                testing_data,
+                list(self.dummy_df.columns),
+                {'n_subtrahends': 100}
+            )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
-        train_df, test_df=fm.difference_features(
-            self.dummy_df.copy(),
-            self.dummy_df.copy(),
-            list(self.dummy_df.columns),
-            {'n_subtrahends': 4}
-        )
-
-        self.assertTrue(isinstance(train_df, pd.DataFrame))
-        self.assertTrue(isinstance(test_df, pd.DataFrame))
+        if testing_data is not None:
+            self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_kde_smoothing(self):

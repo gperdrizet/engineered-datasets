@@ -42,7 +42,6 @@ NUMERICAL_METHODS={
         'n_subtrahends': [2,3,4]
     },
     'kde_smoothing': {
-        'kernel': ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine'],
         'bandwidth': ['scott', 'silverman']
     },
     'kbins_quantization': {

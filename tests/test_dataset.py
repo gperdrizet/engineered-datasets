@@ -188,7 +188,7 @@ class TestDatasetGeneration(unittest.TestCase):
 
         self.dataset.make_datasets(
             n_datasets=2,
-            n_features=len(self.dataset.train_data.columns),
+            n_features=7,
             n_steps=3
         )
 

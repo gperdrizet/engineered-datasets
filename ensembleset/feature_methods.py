@@ -7,8 +7,8 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
+from scipy.stats import gaussian_kde
 from sklearn.impute import KNNImputer
-from sklearn.neighbors import KernelDensity
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer, KBinsDiscretizer
 
 pd.set_option('display.width', 100)
@@ -167,7 +167,7 @@ def log_features(
     '''Takes log of feature, uses sklearn min-max scaler if needed
     to avoid undefined log errors.'''
 
-    features, train_working_df, test_working_df=preprocess_features(
+    features, train_working_df, test_working_df = preprocess_features(
         features=features,
         train_df=train_df,
         test_df=test_df,
@@ -182,7 +182,7 @@ def log_features(
         ]
     )
 
-    features, train_working_df, test_working_df= scale_to_range(
+    features, train_working_df, test_working_df = scale_to_range(
         features=features,
         train_df=train_working_df,
         test_df=test_working_df,
@@ -194,18 +194,26 @@ def log_features(
 
         if kwargs['base'] == '2':
             train_df[f'{feature}_log2']=np.log2(train_working_df[feature])
-            test_df[f'{feature}_log2']=np.log2(test_working_df[feature])
+
+            if test_df is not None:
+                test_df[f'{feature}_log2']=np.log2(test_working_df[feature])
 
         if kwargs['base'] == 'e':
             train_df[f'{feature}_ln']=np.log(train_working_df[feature])
-            test_df[f'{feature}_ln']=np.log(test_working_df[feature])
+
+            if test_df is not None:
+                test_df[f'{feature}_ln']=np.log(test_working_df[feature])
 
         if kwargs['base'] == '10':
             train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
-            test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
+
+            if test_df is not None:
+                test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
 
     train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+
+    if test_df is not None:
+        test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
 
@@ -259,14 +267,16 @@ def ratio_features(
 
         new_train_features[f'{feature_a}_over_{feature_b}'] = quotient
 
-        quotient = np.divide(
-            np.array(test_working_df[feature_a]),
-            np.array(test_working_df[feature_b]),
-            out=np.array([kwargs['div_zero_value']]*len(test_working_df[feature_a])),
-            where=np.array(test_working_df[feature_b]) != 0
-        )
+        if test_df is not None:
 
-        new_test_features[f'{feature_a}_over_{feature_b}'] = quotient
+            quotient = np.divide(
+                np.array(test_working_df[feature_a]),
+                np.array(test_working_df[feature_b]),
+                out=np.array([kwargs['div_zero_value']]*len(test_working_df[feature_a])),
+                where=np.array(test_working_df[feature_b]) != 0
+            )
+
+            new_test_features[f'{feature_a}_over_{feature_b}'] = quotient
 
     train_df, test_df=add_new_features(
         new_train_features = new_train_features,
@@ -307,20 +317,18 @@ def exponential_features(
     new_test_features={}
 
     for feature in features:
-        if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
-
-            scaler=MinMaxScaler(feature_range=(1, 10))
-
-            train_working_df[feature]=scaler.fit_transform(train_working_df[feature].to_frame())
-            test_working_df[feature]=scaler.transform(test_working_df[feature].to_frame())
 
         if kwargs['base'] == 'e':
             new_train_features[f'{feature}_exp_base_e'] = e**train_working_df[feature].astype(float)
-            new_test_features[f'{feature}_exp_base_e'] = e**test_working_df[feature].astype(float)
+
+            if test_df is not None:
+                new_test_features[f'{feature}_exp_base_e'] = e**test_working_df[feature].astype(float)
 
         elif kwargs['base'] == '2':
             new_train_features[f'{feature}_exp_base_2'] = 2**train_working_df[feature].astype(float)
-            new_test_features[f'{feature}_exp_base_2'] = 2**test_working_df[feature].astype(float)
+
+            if test_df is not None:
+                new_test_features[f'{feature}_exp_base_2'] = 2**test_working_df[feature].astype(float)
 
     train_df, test_df=add_new_features(
         new_train_features = new_train_features,
@@ -370,15 +378,22 @@ def sum_features(
     for i, addend_set in enumerate(addend_sets):
 
         train_sum = [0]*len(train_working_df)
-        test_sum = [0]*len(test_working_df)
 
         for addend in addend_set:
 
             train_sum += train_working_df[addend]
-            test_sum += test_working_df[addend]
 
         new_train_features[f'sum_feature_{i}'] = train_sum
-        new_test_features[f'sum_feature_{i}'] = test_sum
+
+        if test_df is not None:
+
+            test_sum = [0]*len(test_working_df)
+
+            for addend in addend_set:
+
+                test_sum += test_working_df[addend]
+
+            new_test_features[f'sum_feature_{i}'] = test_sum
 
     train_df, test_df=add_new_features(
         new_train_features = new_train_features,
@@ -428,15 +443,22 @@ def difference_features(
     for subtrahend_set in subtrahend_sets:
 
         train_difference = train_working_df[subtrahend_set[0]]
-        test_difference = test_working_df[subtrahend_set[0]]
 
         for subtrahend in subtrahend_set[1:]:
 
             train_difference -= train_working_df[subtrahend]
-            test_difference -= test_working_df[subtrahend]
 
         new_train_features['-'.join(subtrahend_set)] = train_difference
-        new_test_features['-'.join(subtrahend_set)] = test_difference
+
+        if test_df is not None:
+
+            test_difference = test_working_df[subtrahend_set[0]]
+
+            for subtrahend in subtrahend_set[1:]:
+
+                test_difference -= test_working_df[subtrahend]
+
+            new_test_features['-'.join(subtrahend_set)] = test_difference
 
     train_df, test_df=add_new_features(
         new_train_features = new_train_features,
@@ -476,14 +498,26 @@ def kde_smoothing(
     new_test_features={}
     new_train_features={}
 
+    if len(train_working_df) > 10000:
+        sample_df=train_working_df.sample(n=10000)
+
+    else:
+        sample_df=train_working_df
+
     for feature in features:
-        kde = KernelDensity(**kwargs).fit(train_working_df[feature].to_numpy().reshape(-1, 1))
-        new_train_features[f'{feature}_kde']=kde.score_samples(
-            train_working_df[feature].to_numpy().reshape(-1, 1)
+        scipy_kde = gaussian_kde(
+            sample_df[feature].to_numpy().flatten(),
+            bw_method = kwargs['bandwidth']
         )
-        new_test_features[f'{feature}_kde']=kde.score_samples(
-            test_working_df[feature].to_numpy().reshape(-1, 1)
+
+        new_train_features[f'{feature}_kde']=scipy_kde(
+            train_working_df[feature].to_numpy().flatten()
         )
+
+        if test_df is not None:
+            new_test_features[f'{feature}_kde']=scipy_kde(
+                test_working_df[feature].to_numpy().flatten()
+            )
 
     train_df, test_df=add_new_features(
         new_train_features = new_train_features,
@@ -524,7 +558,13 @@ def kbins_quantization(
         kwargs['n_bins'] = len(train_df) - 1
 
     kbins = KBinsDiscretizer(**kwargs)
-    binned_features = kbins.fit_transform(train_working_df[features])
+
+    try:
+        binned_features = kbins.fit_transform(train_working_df[features])
+
+    except UserWarning:
+        pass
+
     binned_feature_names = kbins.get_feature_names_out()
     binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
     binned_train_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
@@ -532,7 +572,13 @@ def kbins_quantization(
     binned_test_features_df = None
 
     if test_df is not None:
-        binned_features = kbins.transform(test_working_df[features])
+
+        try:
+            binned_features = kbins.transform(test_working_df[features])
+
+        except UserWarning:
+            pass
+
         binned_feature_names = kbins.get_feature_names_out()
         binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
         binned_test_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
@@ -557,7 +603,12 @@ def preprocess_features(
     '''Runs feature preprocessing steps.'''
 
     train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
+
+    if test_df is not None:
+        test_working_df = test_df.copy()
+
+    else:
+        test_working_df = None
 
     for preprocessing_step in preprocessing_steps:
 
@@ -644,12 +695,12 @@ def remove_large_nums(
 
     # Get rid of large values
     train_df[features] = train_df[features].mask(
-        abs(train_df[features]) > 1.79*10**102
+        abs(train_df[features]) > 1.0*10**102
     )
 
     if test_df is not None:
         test_df[features] = test_df[features].mask(
-            test_df[features] > 1.79*10**102
+            test_df[features] > 1.0*10**102
         )
 
     return features, train_df, test_df
@@ -665,12 +716,12 @@ def remove_small_nums(
 
     # Get rid of small values
     train_df[features] = train_df[features].mask(
-        abs(train_df[features]) < 2.23-308
+        abs(train_df[features]) < 1.0-102
     ).fillna(0.0)
 
     if test_df is not None:
         test_df[features] = test_df[features].mask(
-            abs(test_df[features]) < 2.23-308
+            abs(test_df[features]) < 1.0-102
         ).fillna(0.0)
 
     return features, train_df, test_df
@@ -720,19 +771,14 @@ def remove_constants(
 
     '''Removes constant valued features.'''
 
-    for feature in features:
-        if test_df is not None:
-            if train_df[feature].nunique(dropna=False) == 1 or test_df[feature].nunique(dropna=False) == 1:
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                test_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+    train_df = train_df.loc[:,train_df.nunique(dropna=False) != 1]
 
-        elif test_df is None:
-            if train_df[feature].nunique(dropna=False) == 1:
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+    if test_df is not None:
+        test_df = test_df.loc[:,test_df.nunique(dropna=False) != 1]
 
-    return features, train_df, test_df
+    new_features = list(set(features) & set(train_df.columns.to_list()))
+
+    return new_features, train_df, test_df
 
 
 def add_new_features(
@@ -751,9 +797,12 @@ def add_new_features(
             new_test_features=pd.DataFrame.from_dict(new_test_features)
 
     train_df=pd.concat([train_df, new_train_features], axis=1)
-    test_df=pd.concat([test_df, new_test_features], axis=1)
-
     train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df = train_df.loc[:,~train_df.columns.duplicated()].copy()
+
+    if test_df is not None:
+        test_df=pd.concat([test_df, new_test_features], axis=1)
+        test_df.dropna(axis=1, how='all', inplace=True)
+        train_df = train_df.loc[:,~train_df.columns.duplicated()].copy()
 
     return train_df, test_df
