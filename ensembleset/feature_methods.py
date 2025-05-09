@@ -798,9 +798,11 @@ def add_new_features(
 
     train_df=pd.concat([train_df, new_train_features], axis=1)
     train_df.dropna(axis=1, how='all', inplace=True)
+    train_df = train_df.loc[:,~train_df.columns.duplicated()].copy()
 
     if test_df is not None:
         test_df=pd.concat([test_df, new_test_features], axis=1)
         test_df.dropna(axis=1, how='all', inplace=True)
+        train_df = train_df.loc[:,~train_df.columns.duplicated()].copy()
 
     return train_df, test_df
