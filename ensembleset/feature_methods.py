@@ -544,7 +544,13 @@ def kbins_quantization(
     return train_df, test_df
 
 
-def preprocess_features(features, train_df, test_df, preprocessing_steps):
+def preprocess_features(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        preprocessing_steps:list
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Runs feature preprocessing steps.'''
 
     train_working_df=train_df.copy()
@@ -563,7 +569,12 @@ def preprocess_features(features, train_df, test_df, preprocessing_steps):
     return features, train_working_df, test_working_df
 
 
-def exclude_string_features(features, train_df, test_df):
+def exclude_string_features(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Removes string features from features list.'''
 
     for feature in features:
@@ -581,7 +592,12 @@ def exclude_string_features(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def enforce_floats(features, train_df, test_df):
+def enforce_floats(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Changes features to float dtype.'''
 
     train_df[features]=train_df[features].astype(float).copy()
@@ -592,7 +608,12 @@ def enforce_floats(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def remove_inf(features, train_df, test_df):
+def remove_inf(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Replaces any np.inf values with np.NAN.'''
 
     # Get rid of np.inf
@@ -610,7 +631,12 @@ def remove_inf(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def remove_large_nums(features, train_df, test_df):
+def remove_large_nums(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Replaces numbers larger than the cube root of the float64 limit with np.nan.'''
 
     # Get rid of large values
@@ -626,7 +652,12 @@ def remove_large_nums(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def remove_small_nums(features, train_df, test_df):
+def remove_small_nums(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Replaces values smaller than the float64 limit with zero.'''
 
     # Get rid of small values
@@ -642,7 +673,12 @@ def remove_small_nums(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def knn_impute(features, train_df, test_df):
+def knn_impute(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Uses SciKit-lean's KNN imputer to fill np.nan.'''
 
     imputer=KNNImputer()
@@ -654,7 +690,14 @@ def knn_impute(features, train_df, test_df):
     return features, train_df, test_df
 
 
-def scale_to_range(features, train_df, test_df, min_val=0, max_val=1):
+def scale_to_range(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+        min_val:float = 0.0,
+        max_val:float = 1.0
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Scales features into range'''
 
     scaler=MinMaxScaler(feature_range=(min_val, max_val))
@@ -666,7 +709,12 @@ def scale_to_range(features, train_df, test_df, min_val=0, max_val=1):
     return features, train_df, test_df
 
 
-def remove_constants(features, train_df, test_df):
+def remove_constants(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
     '''Removes constant valued features.'''
 
     for feature in features:
