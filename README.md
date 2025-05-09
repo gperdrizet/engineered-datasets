@@ -1,6 +1,6 @@
 # Ensembleset
 
-[![PyPI release](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml) [![Python CI](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml)[![devcontainer](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds)
+[![PyPI release](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml) [![Python CI](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml)[![Devcontainer](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds)
 
 Ensemblesets generates dataset ensembles by applying a randomized sequence of feature engineering methods to a randomized subset of input features.
 
