@@ -69,9 +69,9 @@ def poly_features(
     '''Runs sklearn's polynomial feature transformer..'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -79,6 +79,7 @@ def poly_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -115,15 +116,17 @@ def spline_features(
     '''Runs sklearn's polynomial feature transformer..'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
             'remove_inf', 
             'remove_large_nums',
+            'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -161,9 +164,9 @@ def log_features(
     to avoid undefined log errors.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -171,17 +174,19 @@ def log_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
-            'scale_to_range'
+            'remove_constants'
         ]
     )
 
+    features, train_working_df, test_working_df= scale_to_range(
+        features=features,
+        train_df=train_working_df,
+        test_df=test_working_df,
+        min_val=1,
+        max_val=10
+    )
+
     for feature in features:
-        if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
-
-            scaler=MinMaxScaler(feature_range=(1, 10))
-
-            train_working_df[feature]=scaler.fit_transform(train_working_df[feature].to_frame())
-            test_working_df[feature]=scaler.transform(test_working_df[feature].to_frame())
 
         if kwargs['base'] == '2':
             train_df[f'{feature}_log2']=np.log2(train_working_df[feature])
@@ -212,9 +217,9 @@ def ratio_features(
     with np.nan.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -222,8 +227,16 @@ def ratio_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
-            'scale_to_range'
+            'remove_constants'
         ]
+    )
+
+    features, train_working_df, test_working_df= scale_to_range(
+        features=features,
+        train_df=train_working_df,
+        test_df=test_working_df,
+        min_val=1,
+        max_val=10
     )
 
     feature_pairs=permutations(features, 2)
@@ -273,9 +286,9 @@ def exponential_features(
     '''Adds exponential features with base 2 or base e.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -283,6 +296,7 @@ def exponential_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -328,9 +342,9 @@ def sum_features(
     '''Adds sum features for variable number of addends.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -338,6 +352,7 @@ def sum_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -387,9 +402,9 @@ def difference_features(
     '''Adds difference features for variable number of subtrahends.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -397,6 +412,7 @@ def difference_features(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -446,9 +462,9 @@ def kde_smoothing(
     '''Uses kernel density estimation to smooth features.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -456,6 +472,7 @@ def kde_smoothing(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -494,9 +511,9 @@ def kbins_quantization(
     '''Discretizes feature with Kbins quantization.'''
 
     features, train_working_df, test_working_df=preprocess_features(
-        features,
-        train_df,
-        test_df,
+        features=features,
+        train_df=train_df,
+        test_df=test_df,
         preprocessing_steps=[
             'exclude_string_features',
             'enforce_floats',
@@ -504,6 +521,7 @@ def kbins_quantization(
             'remove_large_nums',
             'remove_small_nums',
             'knn_impute',
+            'remove_constants',
             'scale_to_range'
         ]
     )
@@ -536,7 +554,7 @@ def preprocess_features(features, train_df, test_df, preprocessing_steps):
 
         preprocessing_func = globals().get(preprocessing_step)
 
-        train_working_df, test_working_df, features = preprocessing_func(
+        features, train_working_df, test_working_df = preprocessing_func(
             features,
             train_working_df,
             test_working_df
@@ -560,7 +578,7 @@ def exclude_string_features(features, train_df, test_df):
                 train_df.drop(feature, axis=1, inplace=True, errors='ignore')
                 features.remove(feature)
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def enforce_floats(features, train_df, test_df):
@@ -571,7 +589,7 @@ def enforce_floats(features, train_df, test_df):
     if test_df is not None:
         test_df[features]=test_df[features].astype(float).copy()
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def remove_inf(features, train_df, test_df):
@@ -589,7 +607,7 @@ def remove_inf(features, train_df, test_df):
             np.nan
         )
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def remove_large_nums(features, train_df, test_df):
@@ -605,7 +623,7 @@ def remove_large_nums(features, train_df, test_df):
             test_df[features] > 1.79*10**102
         )
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def remove_small_nums(features, train_df, test_df):
@@ -621,7 +639,7 @@ def remove_small_nums(features, train_df, test_df):
             abs(test_df[features]) < 2.23-308
         ).fillna(0.0)
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def knn_impute(features, train_df, test_df):
@@ -633,7 +651,7 @@ def knn_impute(features, train_df, test_df):
     if test_df is not None:
         test_df[features] = imputer.transform(test_df[features])
 
-    return train_df, test_df, features
+    return features, train_df, test_df
 
 
 def scale_to_range(features, train_df, test_df, min_val=0, max_val=1):
@@ -645,4 +663,22 @@ def scale_to_range(features, train_df, test_df, min_val=0, max_val=1):
     if test_df is not None:
         test_df[features]=scaler.transform(test_df[features])
 
-    return train_df, test_df, features
+    return features, train_df, test_df
+
+
+def remove_constants(features, train_df, test_df):
+    '''Removes constant valued features.'''
+
+    for feature in features:
+        if test_df is not None:
+            if train_df[feature].nunique(dropna=False) == 1 and test_df[feature].nunique(dropna=False) == 1:
+                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                test_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                features.remove(feature)
+
+        elif test_df is None:
+            if train_df[feature].nunique(dropna=False) == 1:
+                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                features.remove(feature)
+
+    return features, train_df, test_df
