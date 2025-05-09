@@ -2,6 +2,6 @@ __pycache__
 .vscode
 .venv
 .coverage
-dist
 data
+dist
 *.h5
