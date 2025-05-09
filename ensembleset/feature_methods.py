@@ -86,22 +86,24 @@ def poly_features(
 
     transformer=PolynomialFeatures(**kwargs)
 
-    encoded_data=transformer.fit_transform(train_working_df[features])
+    transformed_data=transformer.fit_transform(train_working_df[features])
     new_columns=transformer.get_feature_names_out()
-    encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-    train_df.drop(features, axis=1, inplace=True)
-    train_df=pd.concat([train_df, encoded_df], axis=1)
+    transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+    transformed_test_df = None
 
     if test_df is not None:
 
-        encoded_data=transformer.transform(test_working_df[features])
+        transformed_data=transformer.transform(test_working_df[features])
         new_columns=transformer.get_feature_names_out()
-        encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-        test_df.drop(features, axis=1, inplace=True)
-        test_df=pd.concat([test_df, encoded_df], axis=1)
+        transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
 
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df = add_new_features(
+        new_train_features = transformed_train_df,
+        new_test_features = transformed_test_df,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -133,22 +135,24 @@ def spline_features(
 
     transformer=SplineTransformer(**kwargs)
 
-    encoded_data=transformer.fit_transform(train_working_df[features])
+    transformed_data=transformer.fit_transform(train_working_df[features])
     new_columns=transformer.get_feature_names_out()
-    encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-    train_df.drop(features, axis=1, inplace=True)
-    train_df=pd.concat([train_df, encoded_df], axis=1)
+    transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+    transformed_test_df = None
 
     if test_df is not None:
 
-        encoded_data=transformer.transform(test_working_df[features])
+        transformed_data=transformer.transform(test_working_df[features])
         new_columns=transformer.get_feature_names_out()
-        encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-        test_df.drop(features, axis=1, inplace=True)
-        test_df=pd.concat([test_df, encoded_df], axis=1)
+        transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
 
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df = add_new_features(
+        new_train_features = transformed_train_df,
+        new_test_features = transformed_test_df,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -241,8 +245,8 @@ def ratio_features(
 
     feature_pairs=permutations(features, 2)
 
-    train_features={}
-    test_features={}
+    new_train_features={}
+    new_test_features={}
 
     for feature_a, feature_b in feature_pairs:
 
@@ -253,7 +257,7 @@ def ratio_features(
             where=np.array(train_working_df[feature_b]) != 0
         )
 
-        train_features[f'{feature_a}_over_{feature_b}'] = quotient
+        new_train_features[f'{feature_a}_over_{feature_b}'] = quotient
 
         quotient = np.divide(
             np.array(test_working_df[feature_a]),
@@ -262,16 +266,14 @@ def ratio_features(
             where=np.array(test_working_df[feature_b]) != 0
         )
 
-        test_features[f'{feature_a}_over_{feature_b}'] = quotient
+        new_test_features[f'{feature_a}_over_{feature_b}'] = quotient
 
-    new_train_df=pd.DataFrame.from_dict(train_features)
-    new_test_df=pd.DataFrame.from_dict(test_features)
-
-    train_df=pd.concat([train_df, new_train_df], axis=1)
-    test_df=pd.concat([test_df, new_test_df], axis=1)
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df=add_new_features(
+        new_train_features = new_train_features,
+        new_test_features = new_test_features,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -320,14 +322,12 @@ def exponential_features(
             new_train_features[f'{feature}_exp_base_2'] = 2**train_working_df[feature].astype(float)
             new_test_features[f'{feature}_exp_base_2'] = 2**test_working_df[feature].astype(float)
 
-    new_train_df=pd.DataFrame.from_dict(new_train_features)
-    new_test_df=pd.DataFrame.from_dict(new_test_features)
-
-    train_df=pd.concat([train_df, new_train_df], axis=1)
-    test_df=pd.concat([test_df, new_test_df], axis=1)
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df=add_new_features(
+        new_train_features = new_train_features,
+        new_test_features = new_test_features,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -380,14 +380,12 @@ def sum_features(
         new_train_features[f'sum_feature_{i}'] = train_sum
         new_test_features[f'sum_feature_{i}'] = test_sum
 
-    new_train_df=pd.DataFrame.from_dict(new_train_features)
-    new_test_df=pd.DataFrame.from_dict(new_test_features)
-
-    train_df=pd.concat([train_df, new_train_df], axis=1)
-    test_df=pd.concat([test_df, new_test_df], axis=1)
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df=add_new_features(
+        new_train_features = new_train_features,
+        new_test_features = new_test_features,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -427,7 +425,7 @@ def difference_features(
     new_train_features={}
     subtrahend_sets=combinations(features, n_subtrahends)
 
-    for i, subtrahend_set in enumerate(subtrahend_sets):
+    for subtrahend_set in subtrahend_sets:
 
         train_difference = train_working_df[subtrahend_set[0]]
         test_difference = test_working_df[subtrahend_set[0]]
@@ -440,14 +438,12 @@ def difference_features(
         new_train_features['-'.join(subtrahend_set)] = train_difference
         new_test_features['-'.join(subtrahend_set)] = test_difference
 
-    new_train_df=pd.DataFrame.from_dict(new_train_features)
-    new_test_df=pd.DataFrame.from_dict(new_test_features)
-
-    train_df=pd.concat([train_df, new_train_df], axis=1)
-    test_df=pd.concat([test_df, new_test_df], axis=1)
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df=add_new_features(
+        new_train_features = new_train_features,
+        new_test_features = new_test_features,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -489,14 +485,12 @@ def kde_smoothing(
             test_working_df[feature].to_numpy().reshape(-1, 1)
         )
 
-    new_train_df=pd.DataFrame.from_dict(new_train_features)
-    new_test_df=pd.DataFrame.from_dict(new_test_features)
-
-    train_df=pd.concat([train_df, new_train_df], axis=1)
-    test_df=pd.concat([test_df, new_test_df], axis=1)
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+    train_df, test_df=add_new_features(
+        new_train_features = new_train_features,
+        new_test_features = new_test_features,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -533,17 +527,22 @@ def kbins_quantization(
     binned_features = kbins.fit_transform(train_working_df[features])
     binned_feature_names = kbins.get_feature_names_out()
     binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
-    binned_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
-    train_df = pd.concat([train_df, binned_features_df], axis=1)
-    train_df.dropna(axis=1, how='all', inplace=True)
+    binned_train_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+
+    binned_test_features_df = None
 
     if test_df is not None:
         binned_features = kbins.transform(test_working_df[features])
         binned_feature_names = kbins.get_feature_names_out()
         binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
-        binned_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
-        test_df = pd.concat([test_df, binned_features_df], axis=1)
-        test_df.dropna(axis=1, how='all', inplace=True)
+        binned_test_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+
+    train_df, test_df = add_new_features(
+        new_train_features = binned_train_features_df,
+        new_test_features = binned_test_features_df,
+        train_df = train_df,
+        test_df = test_df
+    )
 
     return train_df, test_df
 
@@ -734,3 +733,27 @@ def remove_constants(
                 features.remove(feature)
 
     return features, train_df, test_df
+
+
+def add_new_features(
+    new_train_features,
+    new_test_features,
+    train_df:pd.DataFrame,
+    test_df:pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    '''Adds new features to dataframes'''
+
+    if isinstance(new_test_features, dict):
+        new_train_features=pd.DataFrame.from_dict(new_train_features)
+
+        if new_test_features is not None:
+            new_test_features=pd.DataFrame.from_dict(new_test_features)
+
+    train_df=pd.concat([train_df, new_train_features], axis=1)
+    test_df=pd.concat([test_df, new_test_features], axis=1)
+
+    train_df.dropna(axis=1, how='all', inplace=True)
+    test_df.dropna(axis=1, how='all', inplace=True)
+
+    return train_df, test_df
