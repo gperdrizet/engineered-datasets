@@ -7,10 +7,13 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
-from sklearn.impute import SimpleImputer
+from sklearn.impute import KNNImputer
 from sklearn.neighbors import KernelDensity
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, OrdinalEncoder, PolynomialFeatures, SplineTransformer, KBinsDiscretizer
 
+pd.set_option('display.width', 100)
+pd.set_option('display.max_rows', 100)
+pd.set_option('display.max_columns', 100)
 
 def onehot_encoding(
         train_df:pd.DataFrame,
@@ -65,55 +68,34 @@ def poly_features(
 
     '''Runs sklearn's polynomial feature transformer..'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
 
     transformer=PolynomialFeatures(**kwargs)
-    imputer=SimpleImputer(strategy='mean')
-    scaler=MinMaxScaler(feature_range=(0, 1))
 
-    imputed_data=imputer.fit_transform(train_working_df[numeric_features])
-    encoded_data=transformer.fit_transform(imputed_data)
+    encoded_data=transformer.fit_transform(train_working_df[features])
     new_columns=transformer.get_feature_names_out()
     encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-    encoded_df[new_columns]=scaler.fit_transform(encoded_df[new_columns])
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
 
     if test_df is not None:
 
-        imputed_data=imputer.transform(test_working_df[numeric_features])
-        encoded_data=transformer.transform(imputed_data)
+        encoded_data=transformer.transform(test_working_df[features])
         new_columns=transformer.get_feature_names_out()
         encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-        encoded_df[new_columns]=scaler.fit_transform(encoded_df[new_columns])
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
 
@@ -132,55 +114,33 @@ def spline_features(
 
     '''Runs sklearn's polynomial feature transformer..'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
 
     transformer=SplineTransformer(**kwargs)
-    imputer=SimpleImputer(strategy='mean')
-    scaler=MinMaxScaler(feature_range=(0, 1))
 
-    imputed_data=imputer.fit_transform(train_working_df[numeric_features])
-    encoded_data=transformer.fit_transform(imputed_data)
+    encoded_data=transformer.fit_transform(train_working_df[features])
     new_columns=transformer.get_feature_names_out()
     encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-    encoded_df[new_columns]=scaler.fit_transform(encoded_df[new_columns])
     train_df.drop(features, axis=1, inplace=True)
     train_df=pd.concat([train_df, encoded_df], axis=1)
 
     if test_df is not None:
 
-        imputed_data=imputer.transform(test_working_df[numeric_features])
-        encoded_data=transformer.transform(imputed_data)
+        encoded_data=transformer.transform(test_working_df[features])
         new_columns=transformer.get_feature_names_out()
         encoded_df=pd.DataFrame(encoded_data, columns=new_columns)
-        encoded_df[new_columns]=scaler.fit_transform(encoded_df[new_columns])
         test_df.drop(features, axis=1, inplace=True)
         test_df=pd.concat([test_df, encoded_df], axis=1)
 
@@ -200,41 +160,22 @@ def log_features(
     '''Takes log of feature, uses sklearn min-max scaler if needed
     to avoid undefined log errors.'''
 
-    # Exclude string features if present
-    numeric_features=[]
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
+    )
+
     for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
-
-    for feature in numeric_features:
         if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
 
             scaler=MinMaxScaler(feature_range=(1, 10))
@@ -270,41 +211,22 @@ def ratio_features(
     '''Adds every possible ratio feature, replaces divide by zero errors
     with np.nan.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
 
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
-
-    feature_pairs=permutations(numeric_features, 2)
+    feature_pairs=permutations(features, 2)
 
     train_features={}
     test_features={}
@@ -350,44 +272,25 @@ def exponential_features(
 
     '''Adds exponential features with base 2 or base e.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
 
     new_train_features={}
     new_test_features={}
 
-    for feature in numeric_features:
+    for feature in features:
         if min(train_working_df[feature]) <= 0 or min(test_working_df[feature]) <= 0:
 
             scaler=MinMaxScaler(feature_range=(1, 10))
@@ -424,49 +327,30 @@ def sum_features(
 
     '''Adds sum features for variable number of addends.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
 
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
-
-    if kwargs['n_addends'] > len(numeric_features):
-        n_addends=len(numeric_features)
+    if kwargs['n_addends'] > len(features):
+        n_addends=len(features)
 
     else:
         n_addends=kwargs['n_addends']
 
     new_test_features={}
     new_train_features={}
-    addend_sets=combinations(numeric_features, n_addends)
+    addend_sets=combinations(features, n_addends)
 
     for i, addend_set in enumerate(addend_sets):
 
@@ -502,49 +386,30 @@ def difference_features(
 
     '''Adds difference features for variable number of subtrahends.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
 
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
-
-    if kwargs['n_subtrahends'] > len(numeric_features):
-        n_subtrahends=len(numeric_features)
+    if kwargs['n_subtrahends'] > len(features):
+        n_subtrahends=len(features)
 
     else:
         n_subtrahends=kwargs['n_subtrahends']
 
     new_test_features={}
     new_train_features={}
-    subtrahend_sets=combinations(numeric_features, n_subtrahends)
+    subtrahend_sets=combinations(features, n_subtrahends)
 
     for i, subtrahend_set in enumerate(subtrahend_sets):
 
@@ -556,8 +421,8 @@ def difference_features(
             train_difference -= train_working_df[subtrahend]
             test_difference -= test_working_df[subtrahend]
 
-        new_train_features[f'difference_feature_{i}'] = train_difference
-        new_test_features[f'difference_feature_{i}'] = test_difference
+        new_train_features['-'.join(subtrahend_set)] = train_difference
+        new_test_features['-'.join(subtrahend_set)] = test_difference
 
     new_train_df=pd.DataFrame.from_dict(new_train_features)
     new_test_df=pd.DataFrame.from_dict(new_test_features)
@@ -580,44 +445,25 @@ def kde_smoothing(
 
     '''Uses kernel density estimation to smooth features.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
 
     new_test_features={}
     new_train_features={}
 
-    for feature in numeric_features:
+    for feature in features:
         kde = KernelDensity(**kwargs).fit(train_working_df[feature].to_numpy().reshape(-1, 1))
         new_train_features[f'{feature}_kde']=kde.score_samples(
             train_working_df[feature].to_numpy().reshape(-1, 1)
@@ -647,57 +493,156 @@ def kbins_quantization(
 
     '''Discretizes feature with Kbins quantization.'''
 
-    # Exclude string features if present
-    numeric_features=[]
-    for feature in features:
-        if is_numeric_dtype(train_df[feature]) and is_numeric_dtype(test_df[feature]):
-            numeric_features.append(feature)
-
-    train_working_df=train_df.copy()
-    test_working_df=test_df.copy()
-
-    train_working_df[numeric_features]=train_working_df[numeric_features].astype(float).copy()
-    test_working_df[numeric_features]=test_working_df[numeric_features].astype(float).copy()
-
-    # Get rid of np.inf
-    train_working_df[numeric_features]=train_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
+    features, train_working_df, test_working_df=preprocess_features(
+        features,
+        train_df,
+        test_df,
+        preprocessing_steps=[
+            'exclude_string_features',
+            'enforce_floats',
+            'remove_inf', 
+            'remove_large_nums',
+            'remove_small_nums',
+            'knn_impute',
+            'scale_to_range'
+        ]
     )
-    test_working_df[numeric_features]=test_working_df[numeric_features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # Get rid of large values
-    train_working_df[numeric_features] = train_working_df[numeric_features].mask(
-        train_working_df[numeric_features] > 5.0*10**102
-    )
-    test_working_df[numeric_features] = test_working_df[numeric_features].mask(
-        test_working_df[numeric_features] > 5.0*10**102
-    )
-
-    imputer=SimpleImputer(strategy='mean')
-    train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
-
-    scaler=MinMaxScaler(feature_range=(1, 100))
-
-    train_working_df[numeric_features]=scaler.fit_transform(train_working_df[numeric_features])
-    test_working_df[numeric_features]=scaler.transform(test_working_df[numeric_features])
-
-    print(train_working_df[numeric_features].describe())
 
     if len(train_df) <= kwargs['n_bins']:
         kwargs['n_bins'] = len(train_df) - 1
 
     kbins = KBinsDiscretizer(**kwargs)
-    train_working_df[numeric_features] = kbins.fit_transform(train_working_df[numeric_features])
+    binned_features = kbins.fit_transform(train_working_df[features])
+    binned_feature_names = kbins.get_feature_names_out()
+    binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
+    binned_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+    train_df = pd.concat([train_df, binned_features_df], axis=1)
+    train_df.dropna(axis=1, how='all', inplace=True)
 
     if test_df is not None:
-        train_working_df[numeric_features] = kbins.transform(train_working_df[numeric_features])
-
-    train_df.dropna(axis=1, how='all', inplace=True)
-    test_df.dropna(axis=1, how='all', inplace=True)
+        test_working_df[features] = kbins.transform(test_working_df[features])
+        test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
+
+
+def preprocess_features(features, train_df, test_df, preprocessing_steps):
+    '''Runs feature preprocessing steps.'''
+
+    train_working_df=train_df.copy()
+    test_working_df=test_df.copy()
+
+    for preprocessing_step in preprocessing_steps:
+
+        preprocessing_func = globals().get(preprocessing_step)
+
+        train_working_df, test_working_df, features = preprocessing_func(
+            features,
+            train_working_df,
+            test_working_df
+        )
+
+    return features, train_working_df, test_working_df
+
+
+def exclude_string_features(features, train_df, test_df):
+    '''Removes string features from features list.'''
+
+    for feature in features:
+        if test_df is not None:
+            if is_numeric_dtype(train_df[feature]) is False or is_numeric_dtype(test_df[feature]) is False:
+                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                test_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                features.remove(feature)
+
+        elif test_df is None:
+            if is_numeric_dtype(train_df[feature]) is False:
+                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                features.remove(feature)
+
+    return train_df, test_df, features
+
+
+def enforce_floats(features, train_df, test_df):
+    '''Changes features to float dtype.'''
+
+    train_df[features]=train_df[features].astype(float).copy()
+
+    if test_df is not None:
+        test_df[features]=test_df[features].astype(float).copy()
+
+    return train_df, test_df, features
+
+
+def remove_inf(features, train_df, test_df):
+    '''Replaces any np.inf values with np.NAN.'''
+
+    # Get rid of np.inf
+    train_df[features]=train_df[features].replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+
+    if test_df is not None:
+        test_df[features]=test_df[features].replace(
+            [np.inf, -np.inf],
+            np.nan
+        )
+
+    return train_df, test_df, features
+
+
+def remove_large_nums(features, train_df, test_df):
+    '''Replaces numbers larger than the cube root of the float64 limit with np.nan.'''
+
+    # Get rid of large values
+    train_df[features] = train_df[features].mask(
+        abs(train_df[features]) > 1.79*10**102
+    )
+
+    if test_df is not None:
+        test_df[features] = test_df[features].mask(
+            test_df[features] > 1.79*10**102
+        )
+
+    return train_df, test_df, features
+
+
+def remove_small_nums(features, train_df, test_df):
+    '''Replaces values smaller than the float64 limit with zero.'''
+
+    # Get rid of small values
+    train_df[features] = train_df[features].mask(
+        abs(train_df[features]) < 2.23-308
+    ).fillna(0.0)
+
+    if test_df is not None:
+        test_df[features] = test_df[features].mask(
+            abs(test_df[features]) < 2.23-308
+        ).fillna(0.0)
+
+    return train_df, test_df, features
+
+
+def knn_impute(features, train_df, test_df):
+    '''Uses SciKit-lean's KNN imputer to fill np.nan.'''
+
+    imputer=KNNImputer()
+    train_df[features] = imputer.fit_transform(train_df[features])
+
+    if test_df is not None:
+        test_df[features] = imputer.transform(test_df[features])
+
+    return train_df, test_df, features
+
+
+def scale_to_range(features, train_df, test_df, min_val=0, max_val=1):
+    '''Scales features into range'''
+
+    scaler=MinMaxScaler(feature_range=(min_val, max_val))
+    train_df[features]=scaler.fit_transform(train_df[features])
+
+    if test_df is not None:
+        test_df[features]=scaler.transform(test_df[features])
+
+    return train_df, test_df, features
