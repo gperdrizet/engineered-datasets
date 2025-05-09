@@ -538,7 +538,11 @@ def kbins_quantization(
     train_df.dropna(axis=1, how='all', inplace=True)
 
     if test_df is not None:
-        test_working_df[features] = kbins.transform(test_working_df[features])
+        binned_features = kbins.transform(test_working_df[features])
+        binned_feature_names = kbins.get_feature_names_out()
+        binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
+        binned_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+        test_df = pd.concat([test_df, binned_features_df], axis=1)
         test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
@@ -719,7 +723,7 @@ def remove_constants(
 
     for feature in features:
         if test_df is not None:
-            if train_df[feature].nunique(dropna=False) == 1 and test_df[feature].nunique(dropna=False) == 1:
+            if train_df[feature].nunique(dropna=False) == 1 or test_df[feature].nunique(dropna=False) == 1:
                 train_df.drop(feature, axis=1, inplace=True, errors='ignore')
                 test_df.drop(feature, axis=1, inplace=True, errors='ignore')
                 features.remove(feature)
