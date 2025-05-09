@@ -228,7 +228,7 @@ class TestFeatureMethods(unittest.TestCase):
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             list(self.dummy_df.columns),
-            {'n_bins': 128, 'encode': 'ordinal', 'strategy': 'quantile'}
+            {'n_bins': 64, 'encode': 'ordinal', 'strategy': 'quantile'}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

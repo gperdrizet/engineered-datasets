@@ -46,7 +46,7 @@ NUMERICAL_METHODS={
         'bandwidth': ['scott', 'silverman']
     },
     'kbins_quantization': {
-        'n_bins': [16,32,64,128,256],
+        'n_bins': [16,32,64],
         'encode': ['ordinal'],
         'strategy': ['uniform', 'quantile', 'kmeans']
     }

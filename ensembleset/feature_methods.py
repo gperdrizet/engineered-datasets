@@ -637,6 +637,7 @@ def kde_smoothing(
 
     return train_df, test_df
 
+
 def kbins_quantization(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
@@ -680,11 +681,17 @@ def kbins_quantization(
     train_working_df[numeric_features] = imputer.fit_transform(train_working_df[numeric_features])
     test_working_df[numeric_features] = imputer.transform(test_working_df[numeric_features])
 
-    new_test_features={}
-    new_train_features={}
+    scaler=MinMaxScaler(feature_range=(1, 100))
+
+    train_working_df[numeric_features]=scaler.fit_transform(train_working_df[numeric_features])
+    test_working_df[numeric_features]=scaler.transform(test_working_df[numeric_features])
+
+    print(train_working_df[numeric_features].describe())
+
+    if len(train_df) <= kwargs['n_bins']:
+        kwargs['n_bins'] = len(train_df) - 1
 
     kbins = KBinsDiscretizer(**kwargs)
-
     train_working_df[numeric_features] = kbins.fit_transform(train_working_df[numeric_features])
 
     if test_df is not None:

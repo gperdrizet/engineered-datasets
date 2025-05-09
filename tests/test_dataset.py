@@ -126,17 +126,13 @@ class TestDataPipelineGen(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames and datasets for tests.'''
 
-        self.dummy_df = pd.DataFrame({
-            'feature1': [0,1],
-            'feature2': [3,4],
-            'feature3': ['a', 'b']
-        })
+        self.dummy_df = test_data.DUMMY_DF
 
         self.dataset = ds.DataSet(
-            'feature2',
-            self.dummy_df,
-            test_data=self.dummy_df,
-            string_features=['feature3']
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings']
         )
 
 
@@ -158,17 +154,13 @@ class TestFeatureSelection(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames and datasets for tests.'''
 
-        self.dummy_df = pd.DataFrame({
-            1: [0,1],
-            'feature2': [3,4],
-            'feature3': ['a', 'b']
-        })
+        self.dummy_df = test_data.DUMMY_DF
 
         self.dataset = ds.DataSet(
-            'feature2',
-            self.dummy_df,
-            test_data=self.dummy_df,
-            string_features=['feature3']
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings']
         )
 
 
@@ -185,20 +177,20 @@ class TestDatasetGeneration(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames and datasets for tests.'''
 
-        self.dummy_df = pd.DataFrame({
-            1: [0,1],
-            'feature2': [3,4],
-            'feature3': ['a', 'b']
-        })
+        self.dummy_df = test_data.DUMMY_DF
 
         self.dataset = ds.DataSet(
-            'feature2',
-            self.dummy_df,
-            test_data=self.dummy_df,
-            string_features=['feature3']
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings']
         )
 
-        self.dataset.make_datasets(2, 2, 1)
+        self.dataset.make_datasets(
+            n_datasets=2,
+            n_features=len(self.dataset.train_data.columns),
+            n_steps=3
+        )
 
 
     def test_make_datasets(self):
