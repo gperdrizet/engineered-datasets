@@ -33,24 +33,26 @@ def onehot_encoding(
 
     '''Runs sklearn's one hot encoder.'''
 
-    encoder=OneHotEncoder(**kwargs)
+    if features is not None:
 
-    encoded_data=encoder.fit_transform(train_df[features])
-    encoded_df=pd.DataFrame(encoded_data, columns=encoder.get_feature_names_out())
-    train_df=pd.concat(
-        [train_df.reset_index(drop=True), encoded_df.reset_index(drop=True)],
-        axis=1
-    )
-    train_df.drop(features, axis=1, inplace=True)
+        encoder=OneHotEncoder(**kwargs)
 
-    if test_df is not None:
-        encoded_data=encoder.transform(test_df[features])
+        encoded_data=encoder.fit_transform(train_df[features])
         encoded_df=pd.DataFrame(encoded_data, columns=encoder.get_feature_names_out())
-        test_df=pd.concat(
-            [test_df.reset_index(drop=True), encoded_df.reset_index(drop=True)],
+        train_df=pd.concat(
+            [train_df.reset_index(drop=True), encoded_df.reset_index(drop=True)],
             axis=1
         )
-        test_df.drop(features, axis=1, inplace=True)
+        train_df.drop(features, axis=1, inplace=True)
+
+        if test_df is not None:
+            encoded_data=encoder.transform(test_df[features])
+            encoded_df=pd.DataFrame(encoded_data, columns=encoder.get_feature_names_out())
+            test_df=pd.concat(
+                [test_df.reset_index(drop=True), encoded_df.reset_index(drop=True)],
+                axis=1
+            )
+            test_df.drop(features, axis=1, inplace=True)
 
     return train_df, test_df
 
@@ -64,12 +66,14 @@ def ordinal_encoding(
 
     '''Runs sklearn's label encoder.'''
 
-    encoder=OrdinalEncoder(**kwargs)
+    if features is not None:
 
-    train_df[features]=encoder.fit_transform(train_df[features])
+        encoder=OrdinalEncoder(**kwargs)
 
-    if test_df is not None:
-        test_df[features]=encoder.transform(test_df[features])
+        train_df[features]=encoder.fit_transform(train_df[features])
+
+        if test_df is not None:
+            test_df[features]=encoder.transform(test_df[features])
 
     return train_df, test_df
 
@@ -99,34 +103,36 @@ def poly_features(
         ]
     )
 
-    transformer=PolynomialFeatures(**kwargs)
+    if features is not None:
 
-    try:
-        transformed_data=transformer.fit_transform(train_working_df[features])
-        new_columns=transformer.get_feature_names_out()
-        transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
-
-    except ValueError:
-        print('Value error in poly feature transformer.')
-
-    transformed_test_df = None
-
-    if test_df is not None:
+        transformer=PolynomialFeatures(**kwargs)
 
         try:
-            transformed_data=transformer.transform(test_working_df[features])
+            transformed_data=transformer.fit_transform(train_working_df[features])
             new_columns=transformer.get_feature_names_out()
-            transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+            transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
 
         except ValueError:
             print('Value error in poly feature transformer.')
 
-    train_df, test_df = add_new_features(
-        new_train_features = transformed_train_df,
-        new_test_features = transformed_test_df,
-        train_df = train_df,
-        test_df = test_df
-    )
+        transformed_test_df = None
+
+        if test_df is not None:
+
+            try:
+                transformed_data=transformer.transform(test_working_df[features])
+                new_columns=transformer.get_feature_names_out()
+                transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+            except ValueError:
+                print('Value error in poly feature transformer.')
+
+        train_df, test_df = add_new_features(
+            new_train_features = transformed_train_df,
+            new_test_features = transformed_test_df,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -156,34 +162,36 @@ def spline_features(
         ]
     )
 
-    transformer=SplineTransformer(**kwargs)
+    if features is not None:
 
-    try:
-        transformed_data=transformer.fit_transform(train_working_df[features])
-        new_columns=transformer.get_feature_names_out()
-        transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
-
-    except ValueError:
-        print('Caught value error error during spline feature concatenation')
-
-    transformed_test_df = None
-
-    if test_df is not None:
+        transformer=SplineTransformer(**kwargs)
 
         try:
-            transformed_data=transformer.transform(test_working_df[features])
+            transformed_data=transformer.fit_transform(train_working_df[features])
             new_columns=transformer.get_feature_names_out()
-            transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+            transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
 
         except ValueError:
             print('Caught value error error during spline feature concatenation')
 
-    train_df, test_df = add_new_features(
-        new_train_features = transformed_train_df,
-        new_test_features = transformed_test_df,
-        train_df = train_df,
-        test_df = test_df
-    )
+        transformed_test_df = None
+
+        if test_df is not None:
+
+            try:
+                transformed_data=transformer.transform(test_working_df[features])
+                new_columns=transformer.get_feature_names_out()
+                transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+            except ValueError:
+                print('Caught value error error during spline feature concatenation')
+
+        train_df, test_df = add_new_features(
+            new_train_features = transformed_train_df,
+            new_test_features = transformed_test_df,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -221,30 +229,32 @@ def log_features(
         max_val=10
     )
 
-    for feature in features:
+    if features is not None:
 
-        if kwargs['base'] == '2':
-            train_df[f'{feature}_log2']=np.log2(train_working_df[feature])
+        for feature in features:
 
-            if test_df is not None:
-                test_df[f'{feature}_log2']=np.log2(test_working_df[feature])
+            if kwargs['base'] == '2':
+                train_df[f'{feature}_log2']=np.log2(train_working_df[feature])
 
-        if kwargs['base'] == 'e':
-            train_df[f'{feature}_ln']=np.log(train_working_df[feature])
+                if test_df is not None:
+                    test_df[f'{feature}_log2']=np.log2(test_working_df[feature])
 
-            if test_df is not None:
-                test_df[f'{feature}_ln']=np.log(test_working_df[feature])
+            if kwargs['base'] == 'e':
+                train_df[f'{feature}_ln']=np.log(train_working_df[feature])
 
-        if kwargs['base'] == '10':
-            train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
+                if test_df is not None:
+                    test_df[f'{feature}_ln']=np.log(test_working_df[feature])
 
-            if test_df is not None:
-                test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
+            if kwargs['base'] == '10':
+                train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
 
-    train_df.dropna(axis=1, how='all', inplace=True)
+                if test_df is not None:
+                    test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
 
-    if test_df is not None:
-        test_df.dropna(axis=1, how='all', inplace=True)
+        train_df.dropna(axis=1, how='all', inplace=True)
+
+        if test_df is not None:
+            test_df.dropna(axis=1, how='all', inplace=True)
 
     return train_df, test_df
 
@@ -274,47 +284,49 @@ def ratio_features(
         ]
     )
 
-    features, train_working_df, test_working_df = scale_to_range(
-        features=features,
-        train_df=train_working_df,
-        test_df=test_working_df,
-        min_val=1,
-        max_val=10
-    )
+    if features is not None:
 
-    feature_pairs=permutations(features, 2)
-
-    new_train_features={}
-    new_test_features={}
-
-    for feature_a, feature_b in feature_pairs:
-
-        quotient = np.divide(
-            np.array(train_working_df[feature_a]),
-            np.array(train_working_df[feature_b]),
-            out=np.array([kwargs['div_zero_value']]*len(train_working_df[feature_a])),
-            where=np.array(train_working_df[feature_b]) != 0
+        features, train_working_df, test_working_df = scale_to_range(
+            features=features,
+            train_df=train_working_df,
+            test_df=test_working_df,
+            min_val=1,
+            max_val=10
         )
 
-        new_train_features[f'{feature_a}_over_{feature_b}'] = quotient
+        feature_pairs=permutations(features, 2)
 
-        if test_df is not None:
+        new_train_features={}
+        new_test_features={}
+
+        for feature_a, feature_b in feature_pairs:
 
             quotient = np.divide(
-                np.array(test_working_df[feature_a]),
-                np.array(test_working_df[feature_b]),
-                out=np.array([kwargs['div_zero_value']]*len(test_working_df[feature_a])),
-                where=np.array(test_working_df[feature_b]) != 0
+                np.array(train_working_df[feature_a]),
+                np.array(train_working_df[feature_b]),
+                out=np.array([kwargs['div_zero_value']]*len(train_working_df[feature_a])),
+                where=np.array(train_working_df[feature_b]) != 0
             )
 
-            new_test_features[f'{feature_a}_over_{feature_b}'] = quotient
+            new_train_features[f'{feature_a}_over_{feature_b}'] = quotient
 
-    train_df, test_df=add_new_features(
-        new_train_features = new_train_features,
-        new_test_features = new_test_features,
-        train_df = train_df,
-        test_df = test_df
-    )
+            if test_df is not None:
+
+                quotient = np.divide(
+                    np.array(test_working_df[feature_a]),
+                    np.array(test_working_df[feature_b]),
+                    out=np.array([kwargs['div_zero_value']]*len(test_working_df[feature_a])),
+                    where=np.array(test_working_df[feature_b]) != 0
+                )
+
+                new_test_features[f'{feature_a}_over_{feature_b}'] = quotient
+
+        train_df, test_df=add_new_features(
+            new_train_features = new_train_features,
+            new_test_features = new_test_features,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -344,36 +356,38 @@ def exponential_features(
         ]
     )
 
-    new_train_features={}
-    new_test_features={}
+    if features is not None:
 
-    for feature in features:
+        new_train_features={}
+        new_test_features={}
 
-        if kwargs['base'] == 'e':
-            new_train_features[f'{feature}_exp_base_e'] = (
-                e**train_working_df[feature].astype(float)
-            )
+        for feature in features:
 
-            if test_df is not None:
-                new_test_features[f'{feature}_exp_base_e'] = (
-                    e**test_working_df[feature].astype(float)
+            if kwargs['base'] == 'e':
+                new_train_features[f'{feature}_exp_base_e'] = (
+                    e**train_working_df[feature].astype(float)
                 )
 
-        elif kwargs['base'] == '2':
-            new_train_features[f'{feature}_exp_base_2'] = (
-                2**train_working_df[feature].astype(float))
+                if test_df is not None:
+                    new_test_features[f'{feature}_exp_base_e'] = (
+                        e**test_working_df[feature].astype(float)
+                    )
 
-            if test_df is not None:
-                new_test_features[f'{feature}_exp_base_2'] = (
-                    2**test_working_df[feature].astype(float)
-                )
+            elif kwargs['base'] == '2':
+                new_train_features[f'{feature}_exp_base_2'] = (
+                    2**train_working_df[feature].astype(float))
 
-    train_df, test_df=add_new_features(
-        new_train_features = new_train_features,
-        new_test_features = new_test_features,
-        train_df = train_df,
-        test_df = test_df
-    )
+                if test_df is not None:
+                    new_test_features[f'{feature}_exp_base_2'] = (
+                        2**test_working_df[feature].astype(float)
+                    )
+
+        train_df, test_df=add_new_features(
+            new_train_features = new_train_features,
+            new_test_features = new_test_features,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -403,42 +417,44 @@ def sum_features(
         ]
     )
 
-    if kwargs['n_addends'] > len(features):
-        n_addends=len(features)
+    if features is not None:
 
-    else:
-        n_addends=kwargs['n_addends']
+        if kwargs['n_addends'] > len(features):
+            n_addends=len(features)
 
-    new_test_features={}
-    new_train_features={}
-    addend_sets=combinations(features, n_addends)
+        else:
+            n_addends=kwargs['n_addends']
 
-    for i, addend_set in enumerate(addend_sets):
+        new_test_features={}
+        new_train_features={}
+        addend_sets=combinations(features, n_addends)
 
-        train_sum = [0]*len(train_working_df)
+        for i, addend_set in enumerate(addend_sets):
 
-        for addend in addend_set:
-
-            train_sum += train_working_df[addend]
-
-        new_train_features[f'sum_feature_{i}'] = train_sum
-
-        if test_df is not None:
-
-            test_sum = [0]*len(test_working_df)
+            train_sum = [0]*len(train_working_df)
 
             for addend in addend_set:
 
-                test_sum += test_working_df[addend]
+                train_sum += train_working_df[addend]
 
-            new_test_features[f'sum_feature_{i}'] = test_sum
+            new_train_features[f'sum_feature_{i}'] = train_sum
 
-    train_df, test_df=add_new_features(
-        new_train_features = new_train_features,
-        new_test_features = new_test_features,
-        train_df = train_df,
-        test_df = test_df
-    )
+            if test_df is not None:
+
+                test_sum = [0]*len(test_working_df)
+
+                for addend in addend_set:
+
+                    test_sum += test_working_df[addend]
+
+                new_test_features[f'sum_feature_{i}'] = test_sum
+
+        train_df, test_df=add_new_features(
+            new_train_features = new_train_features,
+            new_test_features = new_test_features,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -468,42 +484,44 @@ def difference_features(
         ]
     )
 
-    if kwargs['n_subtrahends'] > len(features):
-        n_subtrahends=len(features)
+    if features is not None:
 
-    else:
-        n_subtrahends=kwargs['n_subtrahends']
+        if kwargs['n_subtrahends'] > len(features):
+            n_subtrahends=len(features)
 
-    new_test_features={}
-    new_train_features={}
-    subtrahend_sets=combinations(features, n_subtrahends)
+        else:
+            n_subtrahends=kwargs['n_subtrahends']
 
-    for subtrahend_set in subtrahend_sets:
+        new_test_features={}
+        new_train_features={}
+        subtrahend_sets=combinations(features, n_subtrahends)
 
-        train_difference = train_working_df[subtrahend_set[0]]
+        for subtrahend_set in subtrahend_sets:
 
-        for subtrahend in subtrahend_set[1:]:
-
-            train_difference -= train_working_df[subtrahend]
-
-        new_train_features['-'.join(subtrahend_set)] = train_difference
-
-        if test_df is not None:
-
-            test_difference = test_working_df[subtrahend_set[0]]
+            train_difference = train_working_df[subtrahend_set[0]]
 
             for subtrahend in subtrahend_set[1:]:
 
-                test_difference -= test_working_df[subtrahend]
+                train_difference -= train_working_df[subtrahend]
 
-            new_test_features['-'.join(subtrahend_set)] = test_difference
+            new_train_features['-'.join(subtrahend_set)] = train_difference
 
-    train_df, test_df=add_new_features(
-        new_train_features = new_train_features,
-        new_test_features = new_test_features,
-        train_df = train_df,
-        test_df = test_df
-    )
+            if test_df is not None:
+
+                test_difference = test_working_df[subtrahend_set[0]]
+
+                for subtrahend in subtrahend_set[1:]:
+
+                    test_difference -= test_working_df[subtrahend]
+
+                new_test_features['-'.join(subtrahend_set)] = test_difference
+
+        train_df, test_df=add_new_features(
+            new_train_features = new_train_features,
+            new_test_features = new_test_features,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -533,48 +551,50 @@ def kde_smoothing(
         ]
     )
 
-    new_test_features={}
-    new_train_features={}
+    if features is not None:
 
-    if len(train_working_df) > kwargs['sample_size']:
-        sample_df=train_working_df.sample(n=kwargs['sample_size'])
+        new_test_features={}
+        new_train_features={}
 
-    else:
-        sample_df=train_working_df
+        if len(train_working_df) > kwargs['sample_size']:
+            sample_df=train_working_df.sample(n=kwargs['sample_size'])
 
-    workers = mp.cpu_count() - 2
+        else:
+            sample_df=train_working_df
 
-    for feature in features:
+        workers = mp.cpu_count() - 2
 
-        try:
+        for feature in features:
 
-            scipy_kde = gaussian_kde(
-                sample_df[feature].to_numpy().flatten(),
-                bw_method = kwargs['bandwidth']
-            )
+            try:
 
-            with mp.Pool(workers) as p:
-                new_train_features[f'{feature}_kde'] = np.concatenate(p.map(
-                    scipy_kde,
-                    np.array_split(train_working_df[feature].to_numpy().flatten(), workers)
-                ))
+                scipy_kde = gaussian_kde(
+                    sample_df[feature].to_numpy().flatten(),
+                    bw_method = kwargs['bandwidth']
+                )
 
-            if test_df is not None:
                 with mp.Pool(workers) as p:
-                    new_test_features[f'{feature}_kde'] = np.concatenate(p.map(
+                    new_train_features[f'{feature}_kde'] = np.concatenate(p.map(
                         scipy_kde,
-                        np.array_split(test_working_df[feature].to_numpy().flatten(), workers)
+                        np.array_split(train_working_df[feature].to_numpy().flatten(), workers)
                     ))
 
-        except np.linalg.LinAlgError:
-            print('Numpy linear algebra error in gaussian KDE.')
+                if test_df is not None:
+                    with mp.Pool(workers) as p:
+                        new_test_features[f'{feature}_kde'] = np.concatenate(p.map(
+                            scipy_kde,
+                            np.array_split(test_working_df[feature].to_numpy().flatten(), workers)
+                        ))
 
-    train_df, test_df=add_new_features(
-        new_train_features = new_train_features,
-        new_test_features = new_test_features,
-        train_df = train_df,
-        test_df = test_df
-    )
+            except np.linalg.LinAlgError:
+                print('Numpy linear algebra error in gaussian KDE.')
+
+        train_df, test_df=add_new_features(
+            new_train_features = new_train_features,
+            new_test_features = new_test_features,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -606,35 +626,18 @@ def kbins_quantization(
         ]
     )
 
-    if len(train_df) <= kwargs['n_bins']:
-        kwargs['n_bins'] = len(train_df) - 1
+    if features is not None:
 
-    kbins = KBinsDiscretizer(**kwargs)
+        if len(train_df) <= kwargs['n_bins']:
+            kwargs['n_bins'] = len(train_df) - 1
 
-    try:
-        binned_features = kbins.fit_transform(train_working_df[features])
-        binned_feature_names = kbins.get_feature_names_out()
-        binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
-        binned_train_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
-
-    except ConvergenceWarning:
-        print('Caught ConvergenceWarning in KbinsDescretizer.')
-
-    except UserWarning:
-        print('Caught UserWarning in KbinsDiscretizer.')
-
-    except ValueError:
-        print('Caught ValueError in KbinsDiscretizer.')
-
-    binned_test_features_df = None
-
-    if test_df is not None:
+        kbins = KBinsDiscretizer(**kwargs)
 
         try:
-            binned_features = kbins.transform(test_working_df[features])
+            binned_features = kbins.fit_transform(train_working_df[features])
             binned_feature_names = kbins.get_feature_names_out()
             binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
-            binned_test_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+            binned_train_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
 
         except ConvergenceWarning:
             print('Caught ConvergenceWarning in KbinsDescretizer.')
@@ -645,12 +648,31 @@ def kbins_quantization(
         except ValueError:
             print('Caught ValueError in KbinsDiscretizer.')
 
-    train_df, test_df = add_new_features(
-        new_train_features = binned_train_features_df,
-        new_test_features = binned_test_features_df,
-        train_df = train_df,
-        test_df = test_df
-    )
+        binned_test_features_df = None
+
+        if test_df is not None:
+
+            try:
+                binned_features = kbins.transform(test_working_df[features])
+                binned_feature_names = kbins.get_feature_names_out()
+                binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
+                binned_test_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+
+            except ConvergenceWarning:
+                print('Caught ConvergenceWarning in KbinsDescretizer.')
+
+            except UserWarning:
+                print('Caught UserWarning in KbinsDiscretizer.')
+
+            except ValueError:
+                print('Caught ValueError in KbinsDiscretizer.')
+
+        train_df, test_df = add_new_features(
+            new_train_features = binned_train_features_df,
+            new_test_features = binned_test_features_df,
+            train_df = train_df,
+            test_df = test_df
+        )
 
     return train_df, test_df
 
@@ -676,11 +698,13 @@ def preprocess_features(
 
         preprocessing_func = globals().get(preprocessing_step)
 
-        features, train_working_df, test_working_df = preprocessing_func(
-            features,
-            train_working_df,
-            test_working_df
-        )
+        if features is not None:
+
+            features, train_working_df, test_working_df = preprocessing_func(
+                features,
+                train_working_df,
+                test_working_df
+            )
 
     return features, train_working_df, test_working_df
 
@@ -843,8 +867,9 @@ def remove_constants(
         test_df = test_df.loc[:,test_df.nunique(dropna=False) != 1]
 
     new_features = list(set(features) & set(train_df.columns.to_list()))
-    print(f' Feature (n={len(features)}): {features}')
-    print(f' Features after constant removal (n={len(new_features)}): {new_features}')
+
+    if len(new_features) == 0:
+        new_features = None
 
     return new_features, train_df, test_df
 
