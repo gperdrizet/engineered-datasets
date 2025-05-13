@@ -19,7 +19,7 @@ See the [example usage notebook](https://github.com/gperdrizet/ensembleset/blob/
 Initialize an ensembleset class instance, passing in the label name a training DataFrame. Optionally, include a test DataFrame and/or list of any string features. Then call the `make_datasets()` to generate an ensembleset, specifying:
 
 1. The number of individual datasets to generate.
-2. The number of feature to randomly select for each feature engineering step.
+2. The number of features to randomly select for each feature engineering step.
 3. The number of feature engineering steps to run.
 
 ```python
