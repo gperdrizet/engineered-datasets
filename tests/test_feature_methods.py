@@ -274,7 +274,7 @@ class TestFeatureMethods(unittest.TestCase):
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             list(self.dummy_df.columns),
-            {'kernel': 'gaussian', 'bandwidth': 'silverman'}
+            {'bandwidth': 'silverman', 'sample_size': 1000}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

@@ -42,10 +42,11 @@ NUMERICAL_METHODS={
         'n_subtrahends': [2,3,4]
     },
     'kde_smoothing': {
-        'bandwidth': ['scott', 'silverman']
+        'bandwidth': ['scott', 'silverman'],
+        'sample_size': [1000]
     },
     'kbins_quantization': {
-        'n_bins': [16,32,64],
+        'n_bins': [4,8,16],
         'encode': ['ordinal'],
         'strategy': ['uniform', 'quantile', 'kmeans']
     }
