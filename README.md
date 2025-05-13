@@ -1,8 +1,8 @@
-# Ensembleset
+# EnsembleSet
 
 [![PyPI release](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml) [![Python CI](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml)[![Devcontainer](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds)
 
-Ensembleset generates dataset ensembles by applying a randomized sequence of feature engineering methods to a randomized subset of input features.
+EnsembleSet generates dataset ensembles by applying a randomized sequence of feature engineering methods to a randomized subset of input features.
 
 ## 1. Installation
 
@@ -16,7 +16,7 @@ pip install ensembleset
 
 See the [example usage notebook](https://github.com/gperdrizet/ensembleset/blob/main/examples/regression_calorie_burn.ipynb).
 
-Initialize an ensembleset class instance, passing in the label name a training DataFrame. Optionally, include a test DataFrame and/or list of any string features. Then call the `make_datasets()` to generate an ensembleset, specifying:
+Initialize an EnsembleSet class instance, passing in the label name a training DataFrame. Optionally, include a test DataFrame and/or list of any string features. Then call the `make_datasets()` to generate an EnsembleSet, specifying:
 
 1. The number of individual datasets to generate.
 2. The number of features to randomly select for each feature engineering step.
