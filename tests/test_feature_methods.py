@@ -270,11 +270,11 @@ class TestFeatureMethods(unittest.TestCase):
     def test_kde_smoothing(self):
         '''Tests kde smoother.'''
 
-        train_df, test_df=fm.kde_smoothing(
+        train_df, test_df=fm.kde_smoothing( # pylint: disable=E1101
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             list(self.dummy_df.columns),
-            {'kernel': 'gaussian', 'bandwidth': 'silverman'}
+            {'bandwidth': 'silverman', 'sample_size': 1000}
         )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))
@@ -284,7 +284,7 @@ class TestFeatureMethods(unittest.TestCase):
     def test_kbins_quantization(self):
         '''Tests kbins discretizer.'''
 
-        train_df, test_df=fm.kbins_quantization(
+        train_df, test_df=fm.kbins_quantization( # pylint: disable=E1101
             self.dummy_df.copy(),
             self.dummy_df.copy(),
             list(self.dummy_df.columns),

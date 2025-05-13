@@ -2,7 +2,7 @@
 
 [![PyPI release](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/publish_pypi.yml) [![Python CI](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/python_ci.yml)[![Devcontainer](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds/badge.svg)](https://github.com/gperdrizet/ensembleset/actions/workflows/codespaces/create_codespaces_prebuilds)
 
-Ensemblesets generates dataset ensembles by applying a randomized sequence of feature engineering methods to a randomized subset of input features.
+Ensembleset generates dataset ensembles by applying a randomized sequence of feature engineering methods to a randomized subset of input features.
 
 ## 1. Installation
 
@@ -41,7 +41,7 @@ data_ensemble.make_datasets(
 
 By default, generated datasets will be saved to HDF5 in `data/dataset.h5` using the following structure:
 
-```
+```text
 dataset.h5
 ├──train
 │   ├── labels

@@ -35,7 +35,13 @@ class DataSet:
         if type_check is True:
             self.label = label
             self.train_data = train_data.copy()
-            self.test_data = test_data.copy()
+
+            if test_data is not None:
+                self.test_data = test_data.copy()
+
+            else:
+                self.test_data = None
+
             self.string_features = string_features
 
         # Enforce string type on DataFrame columns
@@ -55,12 +61,16 @@ class DataSet:
 
         # Retrieve and assign the testing labels, set NAN if they don't exist
         # then remove them from the training data
-        if self.label in self.test_data.columns:
-            self.test_labels=np.array(self.test_data[label])
-            self.test_data.drop(self.label, axis=1, inplace=True)
+        if self.test_data is not None:
+            if self.label in self.test_data.columns:
+                self.test_labels=np.array(self.test_data[label])
+                self.test_data.drop(self.label, axis=1, inplace=True)
+
+            else:
+                self.test_labels=[np.nan] * len(self.test_data)
 
         else:
-            self.test_labels=[np.nan] * len(self.test_data)
+            self.test_labels = None
 
         # Create the HDF5 output
         Path('data').mkdir(parents=True, exist_ok=True)
@@ -69,12 +79,17 @@ class DataSet:
         with h5py.File('data/dataset.h5', 'a') as hdf:
 
             _ = hdf.require_group('train')
-            _ = hdf.require_group('test')
+
+            if self.test_data is not None:
+                _ = hdf.require_group('test')
 
         # Add the training and testing labels
         with h5py.File('data/dataset.h5', 'w') as hdf:
+
             _ = hdf.create_dataset('train/labels', data=self.train_labels)
-            _ = hdf.create_dataset('test/labels', data=self.test_labels)
+
+            if self.test_data is not None:
+                _ = hdf.create_dataset('test/labels', data=self.test_labels)
 
         # Define the feature engineering pipeline methods
         self.string_encodings=engineerings.STRING_ENCODINGS
@@ -93,7 +108,12 @@ class DataSet:
 
                 # Take a copy of the training and test data
                 train_df = self.train_data.copy()
-                test_df = self.test_data.copy()
+
+                if self.test_data is not None:
+                    test_df = self.test_data.copy()
+
+                else:
+                    test_df = None
 
                 # Generate a data pipeline
                 pipeline = self._generate_data_pipeline(n_steps)
@@ -105,6 +125,7 @@ class DataSet:
                     func = getattr(fm, method)
 
                     if method in self.string_encodings:
+
                         train_df, test_df = func(
                             train_df,
                             test_df,
@@ -123,8 +144,10 @@ class DataSet:
                         )
 
                 # Save the results to HDF5 output
-                _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df))
-                _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df))
+                _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df).astype(np.float64))
+
+                if test_df is not None:
+                    _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df).astype(np.float64))
 
 
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
