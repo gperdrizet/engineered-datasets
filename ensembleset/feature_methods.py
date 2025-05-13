@@ -717,19 +717,21 @@ def exclude_string_features(
 
     '''Removes string features from features list.'''
 
-    for feature in features:
-        if test_df is not None:
-            if (is_numeric_dtype(train_df[feature]) is False or
-                is_numeric_dtype(test_df[feature]) is False):
+    if features is not None:
 
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                test_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+        for feature in features:
+            if test_df is not None:
+                if (is_numeric_dtype(train_df[feature]) is False or
+                    is_numeric_dtype(test_df[feature]) is False):
 
-        elif test_df is None:
-            if is_numeric_dtype(train_df[feature]) is False:
-                train_df.drop(feature, axis=1, inplace=True, errors='ignore')
-                features.remove(feature)
+                    train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                    test_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                    features.remove(feature)
+
+            elif test_df is None:
+                if is_numeric_dtype(train_df[feature]) is False:
+                    train_df.drop(feature, axis=1, inplace=True, errors='ignore')
+                    features.remove(feature)
 
     return features, train_df, test_df
 
@@ -742,10 +744,12 @@ def enforce_floats(
 
     '''Changes features to float dtype.'''
 
-    train_df[features]=train_df[features].astype(float).copy()
+    if features is not None:
+            
+        train_df[features]=train_df[features].astype(float).copy()
 
-    if test_df is not None:
-        test_df[features]=test_df[features].astype(float).copy()
+        if test_df is not None:
+            test_df[features]=test_df[features].astype(float).copy()
 
     return features, train_df, test_df
 
@@ -758,17 +762,19 @@ def remove_inf(
 
     '''Replaces any np.inf values with np.NAN.'''
 
-    # Get rid of np.inf
-    train_df[features]=train_df[features].replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
+    if features is not None:
 
-    if test_df is not None:
-        test_df[features]=test_df[features].replace(
+        # Get rid of np.inf
+        train_df[features]=train_df[features].replace(
             [np.inf, -np.inf],
             np.nan
         )
+
+        if test_df is not None:
+            test_df[features]=test_df[features].replace(
+                [np.inf, -np.inf],
+                np.nan
+            )
 
     return features, train_df, test_df
 
@@ -781,15 +787,17 @@ def remove_large_nums(
 
     '''Replaces numbers larger than the cube root of the float64 limit with np.nan.'''
 
-    # Get rid of large values
-    train_df[features] = train_df[features].mask(
-        abs(train_df[features]) > 1.0*10**102
-    )
+    if features is not None:
 
-    if test_df is not None:
-        test_df[features] = test_df[features].mask(
-            test_df[features] > 1.0*10**102
+        # Get rid of large values
+        train_df[features] = train_df[features].mask(
+            abs(train_df[features]) > 1.0*10**102
         )
+
+        if test_df is not None:
+            test_df[features] = test_df[features].mask(
+                test_df[features] > 1.0*10**102
+            )
 
     return features, train_df, test_df
 
@@ -802,15 +810,17 @@ def remove_small_nums(
 
     '''Replaces values smaller than the float64 limit with zero.'''
 
-    # Get rid of small values
-    train_df[features] = train_df[features].mask(
-        abs(train_df[features]) < 1.0-102
-    ).fillna(0.0)
+    if features is not None:
 
-    if test_df is not None:
-        test_df[features] = test_df[features].mask(
-            abs(test_df[features]) < 1.0-102
+        # Get rid of small values
+        train_df[features] = train_df[features].mask(
+            abs(train_df[features]) < 1.0-102
         ).fillna(0.0)
+
+        if test_df is not None:
+            test_df[features] = test_df[features].mask(
+                abs(test_df[features]) < 1.0-102
+            ).fillna(0.0)
 
     return features, train_df, test_df
 
@@ -823,7 +833,7 @@ def knn_impute(
 
     '''Uses SciKit-lean's KNN imputer to fill np.nan.'''
 
-    if len(features) > 0:
+    if features is not None:
 
         imputer=KNNImputer()
         train_df[features] = imputer.fit_transform(train_df[features])
@@ -844,11 +854,13 @@ def scale_to_range(
 
     '''Scales features into range'''
 
-    scaler=MinMaxScaler(feature_range=(min_val, max_val))
-    train_df[features]=scaler.fit_transform(train_df[features])
+    if features is not None:
 
-    if test_df is not None:
-        test_df[features]=scaler.transform(test_df[features])
+        scaler=MinMaxScaler(feature_range=(min_val, max_val))
+        train_df[features]=scaler.fit_transform(train_df[features])
+
+        if test_df is not None:
+            test_df[features]=scaler.transform(test_df[features])
 
     return features, train_df, test_df
 
