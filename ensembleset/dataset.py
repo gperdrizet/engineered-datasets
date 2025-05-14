@@ -1,11 +1,8 @@
 '''Generates variations of a dataset using a pool of feature engineering
 techniques. Used for training ensemble models.'''
 
-import os
-import glob
 import logging
-from logging.handlers import RotatingFileHandler
-from typing import Callable
+# from typing import Callable
 from pathlib import Path
 from random import choice, shuffle
 
@@ -16,6 +13,8 @@ import pandas as pd
 import ensembleset.feature_engineerings as engineerings
 import ensembleset.feature_methods as fm
 
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class DataSet:
     '''Dataset generator class.'''
@@ -55,16 +54,12 @@ class DataSet:
             self.data_directory = data_directory
             self.log_level = log_level
 
-        # Start the logger
-        self._start_logger()
-
         # Get the init logger
-        function_logger=logging.getLogger('dataset.__init__')
-        function_logger.info("Training label: '%s'", self.label)
-        function_logger.info('Training data: %s', type(self.train_data))
-        function_logger.info('Testing data: %s', type(self.test_data))
-        function_logger.info('String features: %s', self.string_features)
-        function_logger.info('Data directory: %s', self.data_directory)
+        logger.info("Training label: '%s'", self.label)
+        logger.info('Training data: %s', type(self.train_data))
+        logger.info('Testing data: %s', type(self.test_data))
+        logger.info('String features: %s', self.string_features)
+        logger.info('Data directory: %s', self.data_directory)
 
         # Enforce string type on DataFrame columns
         self.train_data.columns = self.train_data.columns.astype(str)
@@ -121,17 +116,16 @@ class DataSet:
     def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
-        function_logger=logging.getLogger('dataset.make_datasets')
-        function_logger.info('Will make %s datasets', n_datasets)
-        function_logger.info('Running %s feature engineering steps per dataset', n_steps)
-        function_logger.info('Selecting %s features for each step', n_features)
+        logger.info('Will make %s datasets', n_datasets)
+        logger.info('Running %s feature engineering steps per dataset', n_steps)
+        logger.info('Selecting %s features for each step', n_features)
 
         with h5py.File(f'{self.data_directory}/dataset.h5', 'a') as hdf:
 
             # Generate n datasets
             for n in range(n_datasets):
 
-                function_logger.info('Generating dataset %s of %s', n+1, n_datasets)
+                logger.info('Generating dataset %s of %s', n+1, n_datasets)
 
                 # Take a copy of the training and test data
                 train_df = self.train_data.copy()
@@ -152,7 +146,7 @@ class DataSet:
 
                     if method in self.string_encodings:
 
-                        function_logger.info('Applying %s to %s' , method, self.string_features)
+                        logger.info('Applying %s to %s' , method, self.string_features)
 
                         train_df, test_df = func(
                             train_df,
@@ -164,7 +158,7 @@ class DataSet:
                     else:
                         features = self._select_features(n_features, train_df)
 
-                        function_logger.info('Applying %s to %s' , method, features)
+                        logger.info('Applying %s to %s' , method, features)
 
                         train_df, test_df = func(
                             train_df,
@@ -273,44 +267,4 @@ class DataSet:
         return check_pass
 
 
-    def _start_logger(
-            self,
-            logfile_name: str = 'ensembleset.log',
-            logger_name: str = 'dataset'
-    ) -> Callable:
-
-        '''Sets up logging.'''
-
-        # Set-up log directory
-        Path(f'{self.data_directory}/logs').mkdir(parents=True, exist_ok=True)
-
-        # Clear logs if asked
-        for file in glob.glob(f'{self.data_directory}/logs/{logfile_name}*'):
-            os.remove(file)
-
-        # Create logger
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(self.log_level)
-
-        print(f'\nWill log to: {self.data_directory}/logs/{logfile_name}')
-
-        handler = RotatingFileHandler(
-            f'{self.data_directory}/logs/{logfile_name}',
-            encoding = 'utf-8',
-            maxBytes = 5 * 1024 * 1024,  # 5 MiB
-            backupCount = 5
-        )
-
-        formatter = logging.Formatter(
-            '%(levelname)s - %(name)s - %(message)s',
-            datefmt = '%Y-%m-%d %I:%M:%S %p'
-        )
-
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-        logger.info('############################################### ')
-        logger.info('########### Starting Ensembleset ############## ')
-        logger.info('############################################### ')
-
-        #return logger
+    

@@ -1,6 +1,8 @@
 '''Unittests for dataset class.'''
 
+import logging
 import unittest
+from pathlib import Path
 import h5py
 import numpy as np
 import pandas as pd
@@ -8,6 +10,15 @@ import ensembleset.dataset as ds
 import tests.dummy_dataframe as test_data
 
 # pylint: disable=protected-access
+
+Path('tests/logs').mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    filename='tests/logs/test_dataset.log',
+    filemode='w',
+    level=logging.INFO,
+    format='%(levelname)s - %(name)s - %(message)s'
+)
 
 class TestDataSetInit(unittest.TestCase):
     '''Tests for main data set generator class initialization.'''

@@ -1,5 +1,6 @@
 '''Collection of functions to run feature engineering operations.'''
 
+import logging
 import multiprocessing as mp
 from math import e
 from itertools import permutations, combinations
@@ -19,6 +20,9 @@ from sklearn.preprocessing import (
     SplineTransformer,
     KBinsDiscretizer
 )
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 pd.set_option('display.width', 100)
 pd.set_option('display.max_rows', 100)
@@ -427,7 +431,11 @@ def sum_features(
 
         new_test_features={}
         new_train_features={}
-        addend_sets=combinations(features, n_addends)
+        addend_sets=list(combinations(features, n_addends))
+
+        logger.info(
+            'Will compute sums for %s sets of %s features', len(addend_sets), n_addends
+        )
 
         for i, addend_set in enumerate(addend_sets):
 

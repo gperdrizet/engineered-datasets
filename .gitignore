@@ -3,5 +3,6 @@ __pycache__
 .venv
 .coverage
 ensembleset_data
+tests/logs
 dist
 *.h5
