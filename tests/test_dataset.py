@@ -87,7 +87,7 @@ class TestDataSetInit(unittest.TestCase):
     def test_output_creation(self):
         '''Tests the creation of the HDF5 output sink.'''
 
-        hdf = h5py.File('data/dataset.h5', 'r')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -103,7 +103,7 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['strings']
         )
 
-        hdf = h5py.File('data/dataset.h5', 'r')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -177,6 +177,10 @@ class TestDatasetGeneration(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames and datasets for tests.'''
 
+        self.n_datasets = 3
+        self.n_features = 2
+        self.n_steps = 3
+
         self.dummy_df = test_data.DUMMY_DF
 
         self.dataset = ds.DataSet(
@@ -187,8 +191,8 @@ class TestDatasetGeneration(unittest.TestCase):
         )
 
         self.dataset.make_datasets(
-            n_datasets=2,
-            n_features=7,
+            n_datasets=3,
+            n_features=2,
             n_steps=3
         )
 
@@ -196,10 +200,10 @@ class TestDatasetGeneration(unittest.TestCase):
     def test_make_datasets(self):
         '''Tests generation of datasets.'''
 
-        hdf = h5py.File('data/dataset.h5', 'a')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'a')
 
         training_datasets=hdf['train']
-        self.assertEqual(len(training_datasets), 3)
+        self.assertEqual(len(training_datasets), self.n_datasets + 1)
 
         testing_datasets=hdf['test']
-        self.assertEqual(len(testing_datasets), 3)
+        self.assertEqual(len(testing_datasets), self.n_datasets + 1)
