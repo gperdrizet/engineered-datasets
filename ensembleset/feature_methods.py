@@ -844,6 +844,30 @@ def knn_impute(
     return features, train_df, test_df
 
 
+def remove_constants(
+        features: list,
+        train_df:pd.DataFrame,
+        test_df:pd.DataFrame,
+) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
+
+    '''Removes constant valued features.'''
+
+    constant_features=train_df.loc[:,train_df.nunique(dropna=False) == 1]
+    train_df.drop(constant_features, axis=1, inplace=True)
+
+    if test_df is not None:
+        test_df.drop(constant_features, axis=1, inplace=True)
+
+    new_features = list(set(features) & set(train_df.columns.to_list()))
+
+    if len(new_features) == 0:
+        new_features = None
+        train_df = None
+        test_df = None
+
+    return new_features, train_df, test_df
+
+
 def scale_to_range(
         features: list,
         train_df:pd.DataFrame,
@@ -863,27 +887,6 @@ def scale_to_range(
             test_df[features]=scaler.transform(test_df[features])
 
     return features, train_df, test_df
-
-
-def remove_constants(
-        features: list,
-        train_df:pd.DataFrame,
-        test_df:pd.DataFrame,
-) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
-
-    '''Removes constant valued features.'''
-
-    train_df = train_df.loc[:,train_df.nunique(dropna=False) != 1]
-
-    if test_df is not None:
-        test_df = test_df.loc[:,test_df.nunique(dropna=False) != 1]
-
-    new_features = list(set(features) & set(train_df.columns.to_list()))
-
-    if len(new_features) == 0:
-        new_features = None
-
-    return new_features, train_df, test_df
 
 
 def add_new_features(
