@@ -205,7 +205,7 @@ def spline_features(
                 )
 
             except ValueError:
-                logger.error('ValueError in spline feature transoformer')
+                logger.error('ValueError in spline feature transformer')
 
     return train_df, test_df
 
