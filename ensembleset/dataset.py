@@ -140,6 +140,10 @@ class DataSet:
                 # Generate a data pipeline
                 pipeline = self._generate_data_pipeline(n_steps)
 
+                # Set input n features for first round
+                input_n_features = int(len(train_df.columns.to_list()) * frac_features)
+                input_n_features = max([input_n_features, 1])
+
                 # Loop on and apply each method in the pipeline
                 for method, arguments in pipeline.items():
 
@@ -160,6 +164,9 @@ class DataSet:
 
                         n_features = int(len(train_df.columns.to_list()) * frac_features)
                         n_features = max([n_features, 1])
+                        n_features = min([n_features, 2 * input_n_features])
+                        input_n_features = n_features
+
                         features = self._select_features(n_features, train_df)
 
                         logger.info('Applying %s to %s features' , method, len(features))
