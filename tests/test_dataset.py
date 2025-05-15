@@ -1,6 +1,9 @@
 '''Unittests for dataset class.'''
 
+import logging
 import unittest
+from pathlib import Path
+
 import h5py
 import numpy as np
 import pandas as pd
@@ -8,6 +11,17 @@ import ensembleset.dataset as ds
 import tests.dummy_dataframe as test_data
 
 # pylint: disable=protected-access
+
+Path('tests/logs').mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger()
+
+logging.basicConfig(
+    filename='tests/logs/test_dataset.log',
+    filemode='w',
+    level=logging.INFO,
+    format='%(levelname)s - %(name)s - %(message)s'
+)
 
 class TestDataSetInit(unittest.TestCase):
     '''Tests for main data set generator class initialization.'''
@@ -87,7 +101,7 @@ class TestDataSetInit(unittest.TestCase):
     def test_output_creation(self):
         '''Tests the creation of the HDF5 output sink.'''
 
-        hdf = h5py.File('data/dataset.h5', 'r')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -103,7 +117,7 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['strings']
         )
 
-        hdf = h5py.File('data/dataset.h5', 'r')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
 
         self.assertTrue('train' in hdf)
         self.assertTrue('test' in hdf)
@@ -177,6 +191,10 @@ class TestDatasetGeneration(unittest.TestCase):
     def setUp(self):
         '''Dummy DataFrames and datasets for tests.'''
 
+        self.n_datasets = 3
+        self.frac_features = 0.1
+        self.n_steps = 3
+
         self.dummy_df = test_data.DUMMY_DF
 
         self.dataset = ds.DataSet(
@@ -187,19 +205,19 @@ class TestDatasetGeneration(unittest.TestCase):
         )
 
         self.dataset.make_datasets(
-            n_datasets=2,
-            n_features=7,
-            n_steps=3
+            n_datasets=self.n_datasets,
+            frac_features=self.frac_features,
+            n_steps=self.n_steps
         )
 
 
     def test_make_datasets(self):
         '''Tests generation of datasets.'''
 
-        hdf = h5py.File('data/dataset.h5', 'a')
+        hdf = h5py.File('ensembleset_data/dataset.h5', 'a')
 
         training_datasets=hdf['train']
-        self.assertEqual(len(training_datasets), 3)
+        self.assertEqual(len(training_datasets), self.n_datasets + 1)
 
         testing_datasets=hdf['test']
-        self.assertEqual(len(testing_datasets), 3)
+        self.assertEqual(len(testing_datasets), self.n_datasets + 1)

@@ -1,6 +1,7 @@
 '''Generates variations of a dataset using a pool of feature engineering
 techniques. Used for training ensemble models.'''
 
+import logging
 from pathlib import Path
 from random import choice, shuffle
 
@@ -11,7 +12,6 @@ import pandas as pd
 import ensembleset.feature_engineerings as engineerings
 import ensembleset.feature_methods as fm
 
-
 class DataSet:
     '''Dataset generator class.'''
 
@@ -20,15 +20,20 @@ class DataSet:
             label: str,
             train_data: pd.DataFrame,
             test_data: pd.DataFrame = None,
-            string_features: list = None
+            string_features: list = None,
+            data_directory: str = 'ensembleset_data'
         ):
 
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.NullHandler())
+
         # Check user argument types
-        type_check = self.check_argument_types(
-            label,
-            train_data,
-            test_data,
-            string_features
+        type_check = self._check_argument_types(
+            label=label,
+            train_data=train_data,
+            test_data=test_data,
+            string_features=string_features,
+            data_directory=data_directory
         )
 
         # If the type check passed, assign arguments to attributes
@@ -43,6 +48,14 @@ class DataSet:
                 self.test_data = None
 
             self.string_features = string_features
+            self.data_directory = data_directory
+
+        # Get the init logger
+        logger.info("Training label: '%s'", self.label)
+        logger.info('Training data: %s', type(self.train_data))
+        logger.info('Testing data: %s', type(self.test_data))
+        logger.info('String features: %s', self.string_features)
+        logger.info('Data directory: %s', self.data_directory)
 
         # Enforce string type on DataFrame columns
         self.train_data.columns = self.train_data.columns.astype(str)
@@ -73,10 +86,10 @@ class DataSet:
             self.test_labels = None
 
         # Create the HDF5 output
-        Path('data').mkdir(parents=True, exist_ok=True)
+        Path(self.data_directory).mkdir(parents=True, exist_ok=True)
 
         # Create groups for training and testing datasets
-        with h5py.File('data/dataset.h5', 'a') as hdf:
+        with h5py.File(f'{self.data_directory}/dataset.h5', 'a') as hdf:
 
             _ = hdf.require_group('train')
 
@@ -84,7 +97,7 @@ class DataSet:
                 _ = hdf.require_group('test')
 
         # Add the training and testing labels
-        with h5py.File('data/dataset.h5', 'w') as hdf:
+        with h5py.File(f'{self.data_directory}/dataset.h5', 'w') as hdf:
 
             _ = hdf.create_dataset('train/labels', data=self.train_labels)
 
@@ -96,21 +109,30 @@ class DataSet:
         self.numerical_methods=engineerings.NUMERICAL_METHODS
 
 
-    def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
+    def make_datasets(self, n_datasets:int, frac_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
-        with h5py.File('data/dataset.h5', 'a') as hdf:
+        logger = logging.getLogger(__name__ + '.make_datasets')
+        logger.addHandler(logging.NullHandler())
+
+        logger.info('Will make %s datasets', n_datasets)
+        logger.info('Running %s feature engineering steps per dataset', n_steps)
+        logger.info('Selecting %s percent of features for each step', round(frac_features * 100))
+
+        with h5py.File(f'{self.data_directory}/dataset.h5', 'a') as hdf:
 
             # Generate n datasets
             for n in range(n_datasets):
 
-                print(f'\nGenerating dataset {n+1} of {n_datasets}')
+                logger.info('Generating dataset %s of %s', n+1, n_datasets)
+                logger.info('Input training data shape: %s', self.train_data.shape)
 
                 # Take a copy of the training and test data
                 train_df = self.train_data.copy()
 
                 if self.test_data is not None:
                     test_df = self.test_data.copy()
+                    logger.info('Input testing data shape: %s', self.test_data.shape)
 
                 else:
                     test_df = None
@@ -121,10 +143,11 @@ class DataSet:
                 # Loop on and apply each method in the pipeline
                 for method, arguments in pipeline.items():
 
-                    print(f' Applying {method}')
                     func = getattr(fm, method)
 
                     if method in self.string_encodings:
+
+                        logger.info('Applying %s to %s' , method, self.string_features)
 
                         train_df, test_df = func(
                             train_df,
@@ -134,7 +157,12 @@ class DataSet:
                         )
 
                     else:
+
+                        n_features = int(len(train_df.columns.to_list()) * frac_features)
+                        n_features = max([n_features, 1])
                         features = self._select_features(n_features, train_df)
+
+                        logger.info('Applying %s to %s features' , method, len(features))
 
                         train_df, test_df = func(
                             train_df,
@@ -142,6 +170,11 @@ class DataSet:
                             features,
                             arguments
                         )
+
+                        logger.info('New training data shape: %s', train_df.shape)
+
+                        if test_df is not None:
+                            logger.info('New testing data shape: %s', test_df.shape)
 
                 # Save the results to HDF5 output
                 _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df).astype(np.float64))
@@ -190,11 +223,13 @@ class DataSet:
         return pipeline
 
 
-    def check_argument_types(self,
+    def _check_argument_types(
+            self,
             label: str,
             train_data: pd.DataFrame,
-            test_data: pd.DataFrame = None,
-            string_features: list = None
+            test_data: pd.DataFrame,
+            string_features: list,
+            data_directory: str
     ) -> bool:
 
         '''Checks user argument types, returns true or false for all passing.'''
@@ -224,5 +259,11 @@ class DataSet:
 
         else:
             raise TypeError('String features is not a list.')
+
+        if isinstance(data_directory, str):
+            check_pass = True
+
+        else:
+            raise TypeError('Data directory is not a string.')
 
         return check_pass

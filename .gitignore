@@ -2,6 +2,7 @@ __pycache__
 .vscode
 .venv
 .coverage
-data
+ensembleset_data
+tests/logs
 dist
 *.h5
