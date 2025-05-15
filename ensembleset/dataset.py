@@ -219,8 +219,7 @@ class DataSet:
             train_data: pd.DataFrame,
             test_data: pd.DataFrame,
             string_features: list,
-            data_directory: str,
-            log_level: str
+            data_directory: str
     ) -> bool:
 
         '''Checks user argument types, returns true or false for all passing.'''
