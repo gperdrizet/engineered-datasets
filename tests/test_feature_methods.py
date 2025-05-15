@@ -1,4 +1,7 @@
-'''Unittests for dataset class.'''
+'''Unittests for feature methods.'''
+
+import logging
+from pathlib import Path
 
 import unittest
 import numpy as np
@@ -9,6 +12,16 @@ from pandas.api.types import is_numeric_dtype
 import ensembleset.feature_methods as fm
 import tests.dummy_dataframe as test_data
 
+Path('tests/logs').mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger()
+
+logging.basicConfig(
+    filename='tests/logs/test_feature_methods.log',
+    filemode='w',
+    level=logging.INFO,
+    format='%(levelname)s - %(name)s - %(message)s'
+)
 
 class TestFeatureMethods(unittest.TestCase):
     '''Tests feature engineering method functions.'''
@@ -226,7 +239,7 @@ class TestFeatureMethods(unittest.TestCase):
                 self.dummy_df.copy(),
                 testing_data,
                 list(self.dummy_df.columns),
-                {'n_addends': 4}
+                {'n_addends': 3}
             )
 
         self.assertTrue(isinstance(train_df, pd.DataFrame))

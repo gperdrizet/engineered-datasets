@@ -21,12 +21,10 @@ from sklearn.preprocessing import (
     KBinsDiscretizer
 )
 
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
-
 pd.set_option('display.width', 100)
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 100)
+
 
 def onehot_encoding(
         train_df:pd.DataFrame,
@@ -36,6 +34,10 @@ def onehot_encoding(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's one hot encoder.'''
+
+    logger = logging.getLogger(__name__ + '.onehot_encoding')
+    logger.addHandler(logging.NullHandler())
+    logger.info('One-hot encoding string features')
 
     if features is not None:
 
@@ -68,7 +70,11 @@ def ordinal_encoding(
         kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    '''Runs sklearn's label encoder.'''
+    '''Runs sklearn's ordinal encoder.'''
+
+    logger = logging.getLogger(__name__ + '.ordinal_encoding')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Ordinal encoding string features')
 
     if features is not None:
 
@@ -89,7 +95,11 @@ def poly_features(
         kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    '''Runs sklearn's polynomial feature transformer..'''
+    '''Runs sklearn's polynomial feature transformer.'''
+
+    logger = logging.getLogger(__name__ + '.poly_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding polynomial features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -148,7 +158,11 @@ def spline_features(
         kwargs:dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    '''Runs sklearn's polynomial feature transformer..'''
+    '''Runs sklearn's polynomial feature transformer.'''
+
+    logger = logging.getLogger(__name__ + '.spline_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding spline features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -209,6 +223,10 @@ def log_features(
 
     '''Takes log of feature, uses sklearn min-max scaler if needed
     to avoid undefined log errors.'''
+
+    logger = logging.getLogger(__name__ + '.log_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding log features')
 
     features, train_working_df, test_working_df = preprocess_features(
         features=features,
@@ -272,6 +290,10 @@ def ratio_features(
 
     '''Adds every possible ratio feature, replaces divide by zero errors
     with np.nan.'''
+
+    logger = logging.getLogger(__name__ + '.ratio_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding ratio features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -344,6 +366,10 @@ def exponential_features(
 
     '''Adds exponential features with base 2 or base e.'''
 
+    logger = logging.getLogger(__name__ + '.exponential_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding exponential features')
+
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
         train_df=train_df,
@@ -405,6 +431,10 @@ def sum_features(
 
     '''Adds sum features for variable number of addends.'''
 
+    logger = logging.getLogger(__name__ + '.sum_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding sum features')
+
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
         train_df=train_df,
@@ -464,6 +494,9 @@ def sum_features(
             test_df = test_df
         )
 
+    else:
+        logger.info('No features to sum')
+
     return train_df, test_df
 
 
@@ -475,6 +508,10 @@ def difference_features(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Adds difference features for variable number of subtrahends.'''
+
+    logger = logging.getLogger(__name__ + '.difference_features')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding difference features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -542,6 +579,10 @@ def kde_smoothing(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Uses kernel density estimation to smooth features.'''
+
+    logger = logging.getLogger(__name__ + '.kde_smoothing')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding kernel density estimate smoothed features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -616,7 +657,9 @@ def kbins_quantization(
 
     '''Discretizes feature with Kbins quantization.'''
 
-    print(f"  Bins: {kwargs['n_bins']}")
+    logger = logging.getLogger(__name__ + '.kbins_quantization')
+    logger.addHandler(logging.NullHandler())
+    logger.info('Adding k-bins quantized features')
 
     features, train_working_df, test_working_df=preprocess_features(
         features=features,
@@ -663,8 +706,13 @@ def kbins_quantization(
             try:
                 binned_features = kbins.transform(test_working_df[features])
                 binned_feature_names = kbins.get_feature_names_out()
-                binned_feature_names = [f'{feature_name}_bins' for feature_name in binned_feature_names]
-                binned_test_features_df = pd.DataFrame(binned_features, columns=binned_feature_names)
+                binned_feature_names = (
+                    [f'{feature_name}_bins' for feature_name in binned_feature_names]
+                )
+                binned_test_features_df = pd.DataFrame(
+                    binned_features,
+                    columns=binned_feature_names
+                )
 
             except ConvergenceWarning:
                 print('Caught ConvergenceWarning in KbinsDescretizer.')
@@ -694,6 +742,9 @@ def preprocess_features(
 
     '''Runs feature preprocessing steps.'''
 
+    logger = logging.getLogger(__name__ + '.preprocess_features')
+    logger.addHandler(logging.NullHandler())
+
     train_working_df=train_df.copy()
 
     if test_df is not None:
@@ -708,11 +759,18 @@ def preprocess_features(
 
         if features is not None:
 
+            logger.info('Preprocessor running %s on %s', preprocessing_step, features)
+
             features, train_working_df, test_working_df = preprocessing_func(
                 features,
                 train_working_df,
                 test_working_df
             )
+
+        else:
+
+            logger.info('Preprocessor step %s received no features', preprocessing_step)
+
 
     return features, train_working_df, test_working_df
 
@@ -753,7 +811,7 @@ def enforce_floats(
     '''Changes features to float dtype.'''
 
     if features is not None:
-            
+
         train_df[features]=train_df[features].astype(float).copy()
 
         if test_df is not None:

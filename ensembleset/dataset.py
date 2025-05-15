@@ -2,7 +2,6 @@
 techniques. Used for training ensemble models.'''
 
 import logging
-# from typing import Callable
 from pathlib import Path
 from random import choice, shuffle
 
@@ -12,9 +11,6 @@ import pandas as pd
 
 import ensembleset.feature_engineerings as engineerings
 import ensembleset.feature_methods as fm
-
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
 
 class DataSet:
     '''Dataset generator class.'''
@@ -28,6 +24,9 @@ class DataSet:
             data_directory: str = 'ensembleset_data',
             log_level: str = 'DEBUG'
         ):
+
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.NullHandler())
 
         # Check user argument types
         type_check = self._check_argument_types(
@@ -115,6 +114,9 @@ class DataSet:
 
     def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
+
+        logger = logging.getLogger(__name__ + '.make_datasets')
+        logger.addHandler(logging.NullHandler())
 
         logger.info('Will make %s datasets', n_datasets)
         logger.info('Running %s feature engineering steps per dataset', n_steps)
@@ -265,6 +267,3 @@ class DataSet:
             raise TypeError('Invalid log level')
 
         return check_pass
-
-
-    

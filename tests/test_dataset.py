@@ -3,6 +3,7 @@
 import logging
 import unittest
 from pathlib import Path
+
 import h5py
 import numpy as np
 import pandas as pd
@@ -12,6 +13,8 @@ import tests.dummy_dataframe as test_data
 # pylint: disable=protected-access
 
 Path('tests/logs').mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger()
 
 logging.basicConfig(
     filename='tests/logs/test_dataset.log',
