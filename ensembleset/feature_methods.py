@@ -306,7 +306,7 @@ def ratio_features(
         ]
     )
 
-    if features is not None and len(features > 1):
+    if features is not None and len(features) > 1:
 
         features, train_working_df, test_working_df = scale_to_range(
             features=features,
@@ -621,7 +621,7 @@ def difference_features(
 
             logger.debug('Subtracting feature set %s of %s', i + 1, len(subtrahend_sets))
 
-            train_difference = np.array(train_working_df[subtrahend_set[0.0]])
+            train_difference = np.array(train_working_df[subtrahend_set[0]])
 
             for subtrahend in subtrahend_set[1:]:
 
@@ -632,7 +632,7 @@ def difference_features(
 
             if test_df is not None:
 
-                test_difference = np.array(test_working_df[subtrahend_set[0.0]])
+                test_difference = np.array(test_working_df[subtrahend_set[0]])
 
                 for subtrahend in subtrahend_set[1:]:
 
