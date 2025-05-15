@@ -21,8 +21,7 @@ class DataSet:
             train_data: pd.DataFrame,
             test_data: pd.DataFrame = None,
             string_features: list = None,
-            data_directory: str = 'ensembleset_data',
-            log_level: str = 'DEBUG'
+            data_directory: str = 'ensembleset_data'
         ):
 
         logger = logging.getLogger(__name__)
@@ -34,8 +33,7 @@ class DataSet:
             train_data=train_data,
             test_data=test_data,
             string_features=string_features,
-            data_directory=data_directory,
-            log_level=log_level
+            data_directory=data_directory
         )
 
         # If the type check passed, assign arguments to attributes
@@ -51,7 +49,6 @@ class DataSet:
 
             self.string_features = string_features
             self.data_directory = data_directory
-            self.log_level = log_level
 
         # Get the init logger
         logger.info("Training label: '%s'", self.label)
@@ -259,11 +256,5 @@ class DataSet:
 
         else:
             raise TypeError('Data directory is not a string.')
-
-        if isinstance(log_level, str) or log_level is None:
-            check_pass = True
-
-        else:
-            raise TypeError('Invalid log level')
 
         return check_pass
