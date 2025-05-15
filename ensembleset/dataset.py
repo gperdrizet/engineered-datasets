@@ -109,7 +109,7 @@ class DataSet:
         self.numerical_methods=engineerings.NUMERICAL_METHODS
 
 
-    def make_datasets(self, n_datasets:int, n_features:int, n_steps:int):
+    def make_datasets(self, n_datasets:int, frac_features:int, n_steps:int):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
         logger = logging.getLogger(__name__ + '.make_datasets')
@@ -117,7 +117,7 @@ class DataSet:
 
         logger.info('Will make %s datasets', n_datasets)
         logger.info('Running %s feature engineering steps per dataset', n_steps)
-        logger.info('Selecting %s features for each step', n_features)
+        logger.info('Selecting %s percent of features for each step', round(frac_features * 100))
 
         with h5py.File(f'{self.data_directory}/dataset.h5', 'a') as hdf:
 
@@ -125,12 +125,14 @@ class DataSet:
             for n in range(n_datasets):
 
                 logger.info('Generating dataset %s of %s', n+1, n_datasets)
+                logger.info('Input training data shape: %s', self.train_data.shape)
 
                 # Take a copy of the training and test data
                 train_df = self.train_data.copy()
 
                 if self.test_data is not None:
                     test_df = self.test_data.copy()
+                    logger.info('Input testing data shape: %s', self.test_data.shape)
 
                 else:
                     test_df = None
@@ -155,9 +157,12 @@ class DataSet:
                         )
 
                     else:
+
+                        n_features = int(len(train_df.columns.to_list()) * frac_features)
+                        n_features = max([n_features, 1])
                         features = self._select_features(n_features, train_df)
 
-                        logger.info('Applying %s to %s' , method, features)
+                        logger.info('Applying %s to %s features' , method, len(features))
 
                         train_df, test_df = func(
                             train_df,
@@ -165,6 +170,11 @@ class DataSet:
                             features,
                             arguments
                         )
+
+                        logger.info('New training data shape: %s', train_df.shape)
+
+                        if test_df is not None:
+                            logger.info('New testing data shape: %s', test_df.shape)
 
                 # Save the results to HDF5 output
                 _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df).astype(np.float64))

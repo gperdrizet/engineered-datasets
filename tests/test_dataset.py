@@ -192,7 +192,7 @@ class TestDatasetGeneration(unittest.TestCase):
         '''Dummy DataFrames and datasets for tests.'''
 
         self.n_datasets = 3
-        self.n_features = 2
+        self.frac_features = 0.1
         self.n_steps = 3
 
         self.dummy_df = test_data.DUMMY_DF
@@ -205,9 +205,9 @@ class TestDatasetGeneration(unittest.TestCase):
         )
 
         self.dataset.make_datasets(
-            n_datasets=3,
-            n_features=2,
-            n_steps=3
+            n_datasets=self.n_datasets,
+            frac_features=self.frac_features,
+            n_steps=self.n_steps
         )
 
 

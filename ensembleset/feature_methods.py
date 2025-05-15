@@ -759,7 +759,7 @@ def preprocess_features(
 
         if features is not None:
 
-            logger.info('Preprocessor running %s on %s', preprocessing_step, features)
+            logger.info('Preprocessor running %s', preprocessing_step)
 
             features, train_working_df, test_working_df = preprocessing_func(
                 features,
