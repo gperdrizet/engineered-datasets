@@ -118,35 +118,36 @@ def poly_features(
     )
 
     if features is not None:
+        for feature in features:
 
-        transformer=PolynomialFeatures(**kwargs)
-
-        try:
-            transformed_data=transformer.fit_transform(train_working_df[features])
-            new_columns=transformer.get_feature_names_out()
-            transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
-
-        except ValueError:
-            print('Value error in poly feature transformer.')
-
-        transformed_test_df = None
-
-        if test_df is not None:
+            transformer=PolynomialFeatures(**kwargs)
 
             try:
-                transformed_data=transformer.transform(test_working_df[features])
+                transformed_data=transformer.fit_transform(train_working_df[feature])
                 new_columns=transformer.get_feature_names_out()
-                transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+                transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
 
             except ValueError:
                 print('Value error in poly feature transformer.')
 
-        train_df, test_df = add_new_features(
-            new_train_features = transformed_train_df,
-            new_test_features = transformed_test_df,
-            train_df = train_df,
-            test_df = test_df
-        )
+            transformed_test_df = None
+
+            if test_df is not None:
+
+                try:
+                    transformed_data=transformer.transform(test_working_df[feature])
+                    new_columns=transformer.get_feature_names_out()
+                    transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+                except ValueError:
+                    print('Value error in poly feature transformer.')
+
+            train_df, test_df = add_new_features(
+                new_train_features = transformed_train_df,
+                new_test_features = transformed_test_df,
+                train_df = train_df,
+                test_df = test_df
+            )
 
     return train_df, test_df
 
@@ -181,35 +182,36 @@ def spline_features(
     )
 
     if features is not None:
+        for feature in features:
 
-        transformer=SplineTransformer(**kwargs)
-
-        try:
-            transformed_data=transformer.fit_transform(train_working_df[features])
-            new_columns=transformer.get_feature_names_out()
-            transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
-
-        except ValueError:
-            print('Caught value error error during spline feature concatenation')
-
-        transformed_test_df = None
-
-        if test_df is not None:
+            transformer=SplineTransformer(**kwargs)
 
             try:
-                transformed_data=transformer.transform(test_working_df[features])
+                transformed_data=transformer.fit_transform(train_working_df[feature])
                 new_columns=transformer.get_feature_names_out()
-                transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+                transformed_train_df=pd.DataFrame(transformed_data, columns=new_columns)
 
             except ValueError:
                 print('Caught value error error during spline feature concatenation')
 
-        train_df, test_df = add_new_features(
-            new_train_features = transformed_train_df,
-            new_test_features = transformed_test_df,
-            train_df = train_df,
-            test_df = test_df
-        )
+            transformed_test_df = None
+
+            if test_df is not None:
+
+                try:
+                    transformed_data=transformer.transform(test_working_df[feature])
+                    new_columns=transformer.get_feature_names_out()
+                    transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
+
+                except ValueError:
+                    print('Caught value error error during spline feature concatenation')
+
+            train_df, test_df = add_new_features(
+                new_train_features = transformed_train_df,
+                new_test_features = transformed_test_df,
+                train_df = train_df,
+                test_df = test_df
+            )
 
     return train_df, test_df
 
