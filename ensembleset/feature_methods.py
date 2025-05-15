@@ -1,7 +1,9 @@
 '''Collection of functions to run feature engineering operations.'''
+
 import warnings
 import logging
 import multiprocessing as mp
+from random import choices
 from math import e
 from itertools import permutations, combinations
 from typing import Tuple
@@ -94,7 +96,8 @@ def poly_features(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict
+        kwargs:dict,
+        shortcircuit_preprocessing:bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's polynomial feature transformer.'''
@@ -103,21 +106,31 @@ def poly_features(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding polynomial features')
 
-    features, train_working_df, test_working_df=preprocess_features(
-        features=features,
-        train_df=train_df,
-        test_df=test_df,
-        preprocessing_steps=[
-            'exclude_string_features',
-            'enforce_floats',
-            'remove_inf', 
-            'remove_large_nums',
-            'remove_small_nums',
-            'knn_impute',
-            'remove_constants',
-            'scale_to_range'
-        ]
-    )
+    if shortcircuit_preprocessing is False:
+        features, train_working_df, test_working_df=preprocess_features(
+            features=features,
+            train_df=train_df,
+            test_df=test_df,
+            preprocessing_steps=[
+                'exclude_string_features',
+                'enforce_floats',
+                'remove_inf', 
+                'remove_large_nums',
+                'remove_small_nums',
+                'knn_impute',
+                'remove_constants',
+                'scale_to_range'
+            ]
+        )
+
+    else:
+        train_working_df = train_df.copy()
+
+        if test_df is not None:
+            test_working_df = test_df.copy()
+
+        else:
+            test_working_df = None
 
     if features is not None:
         for feature in features:
@@ -138,7 +151,10 @@ def poly_features(
                     transformed_test_df=pd.DataFrame(transformed_data, columns=new_columns)
 
             except ValueError:
-                logger.error('ValueError in poly feature transformer.')
+                logger.error('ValueError in poly feature transformer')
+
+            except RuntimeWarning:
+                logger.warning('RuntimeWarning in poly feature transformer')
 
         train_df, test_df = add_new_features(
             new_train_features = transformed_train_df,
@@ -154,7 +170,8 @@ def spline_features(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict
+        kwargs:dict,
+        shortcircuit_preprocessing:bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Runs sklearn's polynomial feature transformer.'''
@@ -163,21 +180,31 @@ def spline_features(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding spline features')
 
-    features, train_working_df, test_working_df=preprocess_features(
-        features=features,
-        train_df=train_df,
-        test_df=test_df,
-        preprocessing_steps=[
-            'exclude_string_features',
-            'enforce_floats',
-            'remove_inf',
-            'remove_large_nums',
-            'remove_small_nums',
-            'knn_impute',
-            'remove_constants',
-            'scale_to_range'
-        ]
-    )
+    if shortcircuit_preprocessing is False:
+        features, train_working_df, test_working_df=preprocess_features(
+            features=features,
+            train_df=train_df,
+            test_df=test_df,
+            preprocessing_steps=[
+                'exclude_string_features',
+                'enforce_floats',
+                'remove_inf',
+                'remove_large_nums',
+                'remove_small_nums',
+                'knn_impute',
+                'remove_constants',
+                'scale_to_range'
+            ]
+        )
+
+    else:
+        train_working_df = train_df.copy()
+
+        if test_df is not None:
+            test_working_df = test_df.copy()
+
+        else:
+            test_working_df = None
 
     if features is not None:
         for feature in features:
@@ -206,6 +233,9 @@ def spline_features(
 
             except ValueError:
                 logger.error('ValueError in spline feature transformer')
+
+            except RuntimeWarning:
+                logger.warning('RuntimeWarning in spline feature transformer')
 
     return train_df, test_df
 
@@ -317,6 +347,9 @@ def ratio_features(
         )
 
         feature_pairs=list(permutations(features, 2))
+
+        if len(feature_pairs) > 100:
+            feature_pairs = choices(feature_pairs, k=100)
 
         logger.info(
             'Will compute quotients for %s pairs of features', len(feature_pairs)
@@ -511,6 +544,9 @@ def sum_features(
 
         addend_sets=list(combinations(features, n_addends))
 
+        if len(addend_sets) > 100:
+            addend_sets = choices(addend_sets, k=100)
+
         logger.info(
             'Will compute sums for %s sets of %s features', len(addend_sets), n_addends
         )
@@ -613,29 +649,30 @@ def difference_features(
 
         subtrahend_sets=list(combinations(features, n_subtrahends))
 
+        if len(subtrahend_sets) > 100:
+            subtrahend_sets = choices(subtrahend_sets, k=100)
+
         logger.info(
-            'Will compute differences for %s sets of %s features', len(subtrahend_sets), n_subtrahends
+            'Will compute differences for %s sets of %s features',
+            len(subtrahend_sets),
+            n_subtrahends
         )
 
         for i, subtrahend_set in enumerate(subtrahend_sets):
 
             logger.debug('Subtracting feature set %s of %s', i + 1, len(subtrahend_sets))
-
             train_difference = np.array(train_working_df[subtrahend_set[0]])
 
             for subtrahend in subtrahend_set[1:]:
-
                 train_difference -= train_working_df[subtrahend].astype(float).to_numpy()
 
             new_train_feature_names.append('-'.join(subtrahend_set))
             new_train_features.append(train_difference)
 
             if test_df is not None:
-
                 test_difference = np.array(test_working_df[subtrahend_set[0]])
 
                 for subtrahend in subtrahend_set[1:]:
-
                     test_difference -= test_working_df[subtrahend].astype(float).to_numpy()
 
                 new_test_feature_names.append('-'.join(subtrahend_set))
@@ -675,7 +712,8 @@ def kde_smoothing(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict
+        kwargs:dict,
+        shortcircuit_preprocessing:bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Uses kernel density estimation to smooth features.'''
@@ -684,21 +722,31 @@ def kde_smoothing(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding kernel density estimate smoothed features')
 
-    features, train_working_df, test_working_df=preprocess_features(
-        features=features,
-        train_df=train_df,
-        test_df=test_df,
-        preprocessing_steps=[
-            'exclude_string_features',
-            'enforce_floats',
-            'remove_inf', 
-            'remove_large_nums',
-            'remove_small_nums',
-            'knn_impute',
-            'remove_constants',
-            'scale_to_range'
-        ]
-    )
+    if shortcircuit_preprocessing is False:
+        features, train_working_df, test_working_df=preprocess_features(
+            features=features,
+            train_df=train_df,
+            test_df=test_df,
+            preprocessing_steps=[
+                'exclude_string_features',
+                'enforce_floats',
+                'remove_inf', 
+                'remove_large_nums',
+                'remove_small_nums',
+                'knn_impute',
+                'remove_constants',
+                'scale_to_range'
+            ]
+        )
+
+    else:
+        train_working_df = train_df.copy()
+
+        if test_df is not None:
+            test_working_df = test_df.copy()
+
+        else:
+            test_working_df = None
 
     if features is not None:
 
@@ -716,7 +764,6 @@ def kde_smoothing(
         for feature in features:
 
             try:
-
                 scipy_kde = gaussian_kde(
                     sample_df[feature].to_numpy().flatten(),
                     bw_method = kwargs['bandwidth']
@@ -735,8 +782,17 @@ def kde_smoothing(
                             np.array_split(test_working_df[feature].to_numpy().flatten(), workers)
                         ))
 
+            except TypeError:
+                logger.error('Typeerror in KDE smoother')
+
             except np.linalg.LinAlgError:
-                logger.error('Numpy linear algebra error in gaussian KDE.')
+                logger.error('Numpy linear algebra error in gaussian KDE')
+
+            except ValueError:
+                logger.error('Valueerror in KDE smoother')
+
+            except RuntimeWarning:
+                logger.warning('Runtime warning in KDE smoother')
 
         train_df, test_df=add_new_features(
             new_train_features = new_train_features,
@@ -752,7 +808,8 @@ def kbins_quantization(
         train_df:pd.DataFrame,
         test_df:pd.DataFrame,
         features:list,
-        kwargs:dict
+        kwargs:dict,
+        shortcircuit_preprocessing:bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     '''Discretizes feature with Kbins quantization.'''
@@ -761,21 +818,31 @@ def kbins_quantization(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding k-bins quantized features')
 
-    features, train_working_df, test_working_df=preprocess_features(
-        features=features,
-        train_df=train_df,
-        test_df=test_df,
-        preprocessing_steps=[
-            'exclude_string_features',
-            'enforce_floats',
-            'remove_inf', 
-            'remove_large_nums',
-            'remove_small_nums',
-            'knn_impute',
-            'remove_constants',
-            'scale_to_range'
-        ]
-    )
+    if shortcircuit_preprocessing is True:
+        features, train_working_df, test_working_df=preprocess_features(
+            features=features,
+            train_df=train_df,
+            test_df=test_df,
+            preprocessing_steps=[
+                'exclude_string_features',
+                'enforce_floats',
+                'remove_inf', 
+                'remove_large_nums',
+                'remove_small_nums',
+                'knn_impute',
+                'remove_constants',
+                'scale_to_range'
+            ]
+        )
+
+    else:
+        train_working_df = train_df.copy()
+
+        if test_df is not None:
+            test_working_df = test_df.copy()
+
+        else:
+            test_working_df = None
 
     new_train_features = {}
     new_test_features = {}
@@ -791,19 +858,18 @@ def kbins_quantization(
                 new_train_features[binned_feature_name] = binned_feature.flatten()
 
                 if test_df is not None:
-
-                        binned_feature = kbins.transform(test_working_df[feature].to_frame())
-                        new_test_features[binned_feature_name] = binned_feature.flatten()
-
-            except UserWarning:
-                logger.warning('Caught UserWarning in KbinsDiscretizer.')
+                    binned_feature = kbins.transform(test_working_df[feature].to_frame())
+                    new_test_features[binned_feature_name] = binned_feature.flatten()
 
             except ConvergenceWarning:
                 logger.warning('Caught ConvergenceWarning in KbinsDescretizer.')
 
+            except UserWarning:
+                logger.warning('Caught UserWarning in KbinsDiscretizer.')
+
             except ValueError:
                 logger.error('Caught ValueError in KbinsDiscretizer.')
-    
+
         train_df, test_df = add_new_features(
             new_train_features = new_train_features,
             new_test_features = new_test_features,
@@ -835,10 +901,9 @@ def preprocess_features(
         test_working_df = None
 
     for preprocessing_step in preprocessing_steps:
-
         preprocessing_func = globals().get(preprocessing_step)
 
-        if features is not None:
+        if features is not None and len(features) >= 1:
 
             logger.debug('Preprocessor running %s', preprocessing_step)
 
@@ -864,7 +929,7 @@ def exclude_string_features(
 
     '''Removes string features from features list.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         for feature in features:
             if test_df is not None:
@@ -891,7 +956,7 @@ def enforce_floats(
 
     '''Changes features to float dtype.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         train_df[features]=train_df[features].astype(float).copy()
 
@@ -909,7 +974,7 @@ def remove_inf(
 
     '''Replaces any np.inf values with np.NAN.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         # Get rid of np.inf
         train_df[features]=train_df[features].replace(
@@ -934,7 +999,7 @@ def remove_large_nums(
 
     '''Replaces numbers larger than the cube root of the float64 limit with np.nan.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         # Get rid of large values
         train_df[features] = train_df[features].mask(
@@ -957,7 +1022,7 @@ def remove_small_nums(
 
     '''Replaces values smaller than the float64 limit with zero.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         # Get rid of small values
         train_df[features] = train_df[features].mask(
@@ -980,7 +1045,7 @@ def knn_impute(
 
     '''Uses SciKit-lean's KNN imputer to fill np.nan.'''
 
-    if features is not None:
+    if features is not None and len(features) >= 1:
 
         imputer=KNNImputer()
         train_df[features] = imputer.fit_transform(train_df[features])
