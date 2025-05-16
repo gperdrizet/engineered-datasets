@@ -4,5 +4,6 @@ __pycache__
 .coverage
 ensembleset_data
 tests/logs
+optimization/logs
 dist
 *.h5
