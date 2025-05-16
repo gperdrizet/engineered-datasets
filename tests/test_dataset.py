@@ -80,6 +80,13 @@ class TestDataSetInit(unittest.TestCase):
                 string_features='Not a list of features' # Bad string features
             )
 
+            ds.DataSet(
+                label='float_pos',
+                train_data=self.dummy_df.copy(),
+                test_data=None,
+                string_features='strings'
+            )
+
 
     def test_label_assignment(self):
         '''Tests assigning and saving labels.'''
@@ -214,10 +221,26 @@ class TestDatasetGeneration(unittest.TestCase):
     def test_make_datasets(self):
         '''Tests generation of datasets.'''
 
-        hdf = h5py.File('ensembleset_data/dataset.h5', 'a')
+        for test_df in [None, self.dummy_df.copy()]:
+            self.dataset = ds.DataSet(
+                label='floats_pos',
+                train_data=self.dummy_df.copy(),
+                test_data=test_df,
+                string_features=['strings']
+            )
 
-        training_datasets=hdf['train']
-        self.assertEqual(len(training_datasets), self.n_datasets + 1)
+            self.dataset.make_datasets(
+                n_datasets=self.n_datasets,
+                frac_features=self.frac_features,
+                n_steps=self.n_steps
+            )
 
-        testing_datasets=hdf['test']
-        self.assertEqual(len(testing_datasets), self.n_datasets + 1)
+            hdf = h5py.File('ensembleset_data/dataset.h5', 'a')
+
+            self.assertEqual(len(hdf['train']), self.n_datasets + 1)
+
+            if test_df is not None:
+                self.assertEqual(len(hdf['test']), self.n_datasets + 1)
+
+            else:
+                self.assertEqual(hdf['test/1'], None)
