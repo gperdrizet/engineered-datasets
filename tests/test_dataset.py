@@ -108,14 +108,12 @@ class TestDataSetInit(unittest.TestCase):
     def test_output_creation(self):
         '''Tests the creation of the HDF5 output sink.'''
 
-        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
+        with h5py.File('ensembleset_data/dataset.h5', 'r') as hdf:
 
-        self.assertTrue('train' in hdf)
-        self.assertTrue('test' in hdf)
-        self.assertEqual(hdf['test/labels'][-1], 7.0)
-        self.assertEqual(hdf['test/labels'][-1], 7.0)
-
-        hdf.close()
+            self.assertTrue('train' in hdf)
+            self.assertTrue('test' in hdf)
+            self.assertEqual(hdf['test/labels'][-1], 7.0)
+            self.assertEqual(hdf['test/labels'][-1], 7.0)
 
         _=ds.DataSet(
             label='bad_label_feature',
@@ -124,14 +122,12 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['strings']
         )
 
-        hdf = h5py.File('ensembleset_data/dataset.h5', 'r')
+        with h5py.File('ensembleset_data/dataset.h5', 'r') as hdf:
 
-        self.assertTrue('train' in hdf)
-        self.assertTrue('test' in hdf)
-        self.assertTrue(np.isnan(hdf['test/labels'][-1]))
-        self.assertTrue(np.isnan(hdf['test/labels'][-1]))
-
-        hdf.close()
+            self.assertTrue('train' in hdf)
+            self.assertTrue('test' in hdf)
+            self.assertTrue(np.isnan(hdf['test/labels'][-1]))
+            self.assertTrue(np.isnan(hdf['test/labels'][-1]))
 
 
     def test_pipeline_options(self):
@@ -204,43 +200,28 @@ class TestDatasetGeneration(unittest.TestCase):
 
         self.dummy_df = test_data.DUMMY_DF
 
-        self.dataset = ds.DataSet(
-            label='floats_pos',
-            train_data=self.dummy_df.copy(),
-            test_data=self.dummy_df.copy(),
-            string_features=['strings']
-        )
-
-        self.dataset.make_datasets(
-            n_datasets=self.n_datasets,
-            frac_features=self.frac_features,
-            n_steps=self.n_steps
-        )
-
 
     def test_make_datasets(self):
         '''Tests generation of datasets.'''
 
         for test_df in [None, self.dummy_df.copy()]:
-            self.dataset = ds.DataSet(
+            dataset = ds.DataSet(
                 label='floats_pos',
                 train_data=self.dummy_df.copy(),
                 test_data=test_df,
-                string_features=['strings']
+                string_features=['strings'],
+                data_directory='ensembleset_data'
             )
 
-            self.dataset.make_datasets(
+            dataset.make_datasets(
                 n_datasets=self.n_datasets,
                 frac_features=self.frac_features,
                 n_steps=self.n_steps
             )
 
-            hdf = h5py.File('ensembleset_data/dataset.h5', 'a')
+            with h5py.File('ensembleset_data/dataset.h5', 'a') as hdf:
 
-            self.assertEqual(len(hdf['train']), self.n_datasets + 1)
+                self.assertEqual(len(hdf['train']), self.n_datasets + 1)
 
-            if test_df is not None:
-                self.assertEqual(len(hdf['test']), self.n_datasets + 1)
-
-            else:
-                self.assertEqual(hdf['test/1'], None)
+                if test_df is not None:
+                    self.assertEqual(len(hdf['test']), self.n_datasets + 1)

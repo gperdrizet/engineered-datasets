@@ -854,7 +854,7 @@ def kbins_quantization(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding k-bins quantized features')
 
-    if shortcircuit_preprocessing is True:
+    if shortcircuit_preprocessing is False:
         features, train_working_df, test_working_df=preprocess_features(
             features=features,
             train_df=train_df,
