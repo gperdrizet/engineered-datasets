@@ -3,6 +3,7 @@
 import sys
 import argparse
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import h5py
@@ -35,8 +36,10 @@ def optimization_run(
     Path('optimization/logs').mkdir(parents=True, exist_ok=True)
 
     logging.basicConfig(
-        filename=f'optimization/logs/{study_name}.log',
-        filemode='w',
+        handlers=[RotatingFileHandler(
+            f'optimization/logs/{study_name}.log',
+            maxBytes=10000, backupCount=10
+        )],
         level=logging.DEBUG,
         format='%(levelname)s - %(name)s - %(message)s'
     )
@@ -55,8 +58,7 @@ def optimization_run(
     training_data, validation_data = train_test_split(raw_data, test_size=0.5)
 
     function_logger.info('Optuna RDB storage: %s', storage_name)
-    function_logger.info('Training data:')
-    function_logger.info(training_data.info())
+    function_logger.info('Training data:\n %s', training_data.info())
 
     study.optimize(
         lambda trial: objective(
