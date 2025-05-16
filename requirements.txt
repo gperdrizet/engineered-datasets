@@ -9,3 +9,7 @@ twine
 build
 coverage
 flake8
+optuna
+optuna_dashboard
+gunicorn
+psycopg2-binary

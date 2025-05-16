@@ -279,30 +279,66 @@ def log_features(
 
     if features is not None:
 
-        for feature in features:
+        logger.info(
+            'Will compute log for %s features', len(features)
+        )
+
+        new_train_feature_names = []
+        new_train_features = []
+        new_test_feature_names = []
+        new_test_features = []
+
+        for i, feature in enumerate(features):
+
+            logger.debug('Taking log of feature %s of %s', i + 1, len(features))
 
             if kwargs['base'] == '2':
-                train_df[f'{feature}_log2']=np.log2(train_working_df[feature])
+                new_train_feature_names.append(f'{feature}_log2')
+                new_train_features.append(np.log2(train_working_df[feature]))
 
                 if test_df is not None:
-                    test_df[f'{feature}_log2']=np.log2(test_working_df[feature])
+                    new_test_feature_names.append(f'{feature}_log2')
+                    new_test_features.append(np.log2(test_working_df[feature]))
 
             if kwargs['base'] == 'e':
-                train_df[f'{feature}_ln']=np.log(train_working_df[feature])
+                new_train_feature_names.append(f'{feature}_loge')
+                new_train_features.append(np.log(train_working_df[feature]))
 
                 if test_df is not None:
-                    test_df[f'{feature}_ln']=np.log(test_working_df[feature])
+                    new_test_feature_names.append(f'{feature}_loge')
+                    new_test_features.append(np.log2(test_working_df[feature]))
 
             if kwargs['base'] == '10':
-                train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
+                new_train_feature_names.append(f'{feature}_log10')
+                new_train_features.append(np.log10(train_working_df[feature]))
 
                 if test_df is not None:
-                    test_df[f'{feature}_log10']=np.log10(test_working_df[feature])
+                    new_test_feature_names.append(f'{feature}_log10')
+                    new_test_features.append(np.log2(test_working_df[feature]))
 
-        train_df.dropna(axis=1, how='all', inplace=True)
+        logger.debug('New train features shape: %s', np.array(new_train_features).shape)
+        logger.debug('New train feature names shape: %s', len(new_train_feature_names))
+
+        new_train_features_df = pd.DataFrame(
+            np.array(new_train_features).T,
+            columns=new_train_feature_names
+        )
 
         if test_df is not None:
-            test_df.dropna(axis=1, how='all', inplace=True)
+            new_test_features_df = pd.DataFrame(
+                np.array(new_test_features).T,
+                columns=new_test_feature_names
+            )
+
+        else:
+            new_test_features_df = None
+
+        train_df, test_df = add_new_features(
+            new_train_features=new_train_features_df,
+            new_test_features=new_test_features_df,
+            train_df=train_df,
+            test_df=test_df
+        )
 
     return train_df, test_df
 
@@ -818,7 +854,7 @@ def kbins_quantization(
     logger.addHandler(logging.NullHandler())
     logger.debug('Adding k-bins quantized features')
 
-    if shortcircuit_preprocessing is True:
+    if shortcircuit_preprocessing is False:
         features, train_working_df, test_working_df=preprocess_features(
             features=features,
             train_df=train_df,
@@ -862,13 +898,13 @@ def kbins_quantization(
                     new_test_features[binned_feature_name] = binned_feature.flatten()
 
             except ConvergenceWarning:
-                logger.warning('Caught ConvergenceWarning in KbinsDescretizer.')
+                logger.warning('Caught ConvergenceWarning in KbinsDescretizer')
 
             except UserWarning:
-                logger.warning('Caught UserWarning in KbinsDiscretizer.')
+                logger.warning('Caught UserWarning in KbinsDiscretizer')
 
             except ValueError:
-                logger.error('Caught ValueError in KbinsDiscretizer.')
+                logger.error('Caught ValueError in KbinsDiscretizer')
 
         train_df, test_df = add_new_features(
             new_train_features = new_train_features,

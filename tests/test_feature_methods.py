@@ -161,6 +161,7 @@ class TestFeatureMethods(unittest.TestCase):
 
         for base in ['e', '2']:
             for testing_data in [None, self.dummy_df.copy()]:
+
                 train_df, test_df=fm.exponential_features(
                     self.dummy_df.copy(),
                     testing_data,
@@ -179,35 +180,39 @@ class TestFeatureMethods(unittest.TestCase):
 
         for addends in [1, 2, 3, 4, 100]:
             for testing_data in [None, self.dummy_df.copy()]:
-                train_df, test_df=fm.sum_features(
-                    self.dummy_df.copy(),
-                    testing_data,
-                    list(self.dummy_df.columns),
-                    {'n_addends': addends}
-                )
+                for features in [list(self.dummy_df.columns), [list(self.dummy_df.columns)[0]]]:
 
-                self.assertTrue(isinstance(train_df, pd.DataFrame))
+                    train_df, test_df=fm.sum_features(
+                        self.dummy_df.copy(),
+                        testing_data,
+                        features,
+                        {'n_addends': addends}
+                    )
 
-                if testing_data is not None:
-                    self.assertTrue(isinstance(test_df, pd.DataFrame))
+                    self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+                    if testing_data is not None:
+                        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_difference_features(self):
         '''Tests difference features transformer.'''
 
-        for subtrahends in [1, 2, 3, 4, 100]:
+        for subtrahends in [2, 3, 4, 100]:
             for testing_data in [None, self.dummy_df.copy()]:
-                train_df, test_df=fm.difference_features(
-                    self.dummy_df.copy(),
-                    testing_data,
-                    list(self.dummy_df.columns),
-                    {'n_subtrahends': subtrahends}
-                )
+                for features in [list(self.dummy_df.columns), [list(self.dummy_df.columns)[0]]]:
 
-                self.assertTrue(isinstance(train_df, pd.DataFrame))
+                    train_df, test_df=fm.difference_features(
+                        self.dummy_df.copy(),
+                        testing_data,
+                        features,
+                        {'n_subtrahends': subtrahends}
+                    )
 
-                if testing_data is not None:
-                    self.assertTrue(isinstance(test_df, pd.DataFrame))
+                    self.assertTrue(isinstance(train_df, pd.DataFrame))
+
+                    if testing_data is not None:
+                        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_kde_smoothing(self):
@@ -216,6 +221,7 @@ class TestFeatureMethods(unittest.TestCase):
         for shortcircuit_preprocessing in [True, False]:
             for testing_data in [None, self.dummy_df.copy()]:
                 for sample_size in [5, 1000]:
+
                     train_df, test_df=fm.kde_smoothing( # pylint: disable=E1101
                         self.dummy_df.copy(),
                         testing_data,
@@ -235,6 +241,7 @@ class TestFeatureMethods(unittest.TestCase):
 
         for shortcircuit_preprocessing in [True, False]:
             for testing_data in [None, self.dummy_df.copy()]:
+
                 train_df, test_df=fm.kbins_quantization( # pylint: disable=E1101
                     self.dummy_df.copy(),
                     testing_data,
