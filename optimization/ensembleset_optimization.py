@@ -1,5 +1,8 @@
 '''Optuna optimization of ensembleset generation parameters.'''
 
+import os
+import re
+import io
 import sys
 import argparse
 import logging
@@ -31,14 +34,15 @@ def optimization_run(
 
     '''Main function to orchestrate optimization run.'''
 
-    function_logger = logging.getLogger(__name__ + '.optimization_run')
-
     Path('optimization/logs').mkdir(parents=True, exist_ok=True)
+    delete_old_logs('optimization/logs', study_name)
+
+    function_logger = logging.getLogger(__name__ + '.optimization_run')
 
     logging.basicConfig(
         handlers=[RotatingFileHandler(
             f'optimization/logs/{study_name}.log',
-            maxBytes=10000, backupCount=10
+            maxBytes=100000, backupCount=10
         )],
         level=logging.DEBUG,
         format='%(levelname)s - %(name)s - %(message)s'
@@ -58,7 +62,16 @@ def optimization_run(
     training_data, validation_data = train_test_split(raw_data, test_size=0.5)
 
     function_logger.info('Optuna RDB storage: %s', storage_name)
-    function_logger.info('Training data:\n %s', training_data.info())
+    function_logger.info('Training data:')
+
+    # Capture df.info() output
+    buffer = io.StringIO()
+    training_data.info(buf=buffer)
+    info_output = buffer.getvalue()
+
+    # Log the output
+    for line in info_output.splitlines():
+        function_logger.info(line)
 
     study.optimize(
         lambda trial: objective(
@@ -128,8 +141,16 @@ def objective(
         stage_two_training_df = pd.DataFrame.from_dict(stage_one_test_predictions)
         stage_two_training_df['labels'] = hdf['test/labels']
 
-        objective_logger('Stage II training data')
-        objective_logger(stage_two_training_df.head())
+        objective_logger.info('Stage II training data')
+
+        # Capture df.info() output
+        buffer = io.StringIO()
+        stage_two_training_df.info(buf=buffer)
+        info_output = buffer.getvalue()
+
+        # Log the output
+        for line in info_output.splitlines():
+            objective_logger.info(line)
 
         scores = cross_val_score(
             HistGradientBoostingRegressor(loss=loss),
@@ -150,6 +171,16 @@ def objective(
     )
 
     return cv_score_mean
+
+
+def delete_old_logs(directory:str, basename:str) -> None:
+    '''Deletes old log files from previous optimization runs on the
+    same dataset.'''
+
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if re.search(basename, filename):
+            os.remove(file_path)
 
 
 if __name__ == '__main__':
