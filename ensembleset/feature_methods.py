@@ -301,16 +301,16 @@ def log_features(
                     new_test_features.append(np.log2(test_working_df[feature]))
 
             if kwargs['base'] == 'e':
-                train_df[f'{feature}_ln']=np.log(train_working_df[feature])
                 new_train_feature_names.append(f'{feature}_loge')
+                new_train_features.append(np.log(train_working_df[feature]))
 
                 if test_df is not None:
                     new_test_feature_names.append(f'{feature}_loge')
                     new_test_features.append(np.log2(test_working_df[feature]))
 
             if kwargs['base'] == '10':
-                train_df[f'{feature}_log10']=np.log10(train_working_df[feature])
                 new_train_feature_names.append(f'{feature}_log10')
+                new_train_features.append(np.log10(train_working_df[feature]))
 
                 if test_df is not None:
                     new_test_feature_names.append(f'{feature}_log10')
