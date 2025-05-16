@@ -164,7 +164,7 @@ def objective(
     cv_score_mean = np.mean(np.sqrt(-scores))
     cv_score_std = np.std(np.sqrt(-scores))
 
-    objective_logger(
+    objective_logger.info(
         'Cross-validation score: %s +/- %s',
         round(cv_score_mean, 4),
         round(cv_score_std, 4)
