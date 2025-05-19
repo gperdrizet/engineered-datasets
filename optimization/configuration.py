@@ -23,7 +23,7 @@ STORAGE = f'postgresql://{USER}:{PASSWD}@{HOST}:{PORT}'
 N_TRIALS = 1000
 N_DATASETS = (2, 100)
 FRAC_FEATURES = (0.01, 1.0)
-N_STEPS = (1, 10)
+N_STEPS = (1, 3)
 
 
 #############################################################

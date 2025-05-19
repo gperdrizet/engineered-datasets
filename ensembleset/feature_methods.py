@@ -269,19 +269,22 @@ def log_features(
         ]
     )
 
-    features, train_working_df, test_working_df = scale_to_range(
-        features=features,
-        train_df=train_working_df,
-        test_df=test_working_df,
-        min_val=1,
-        max_val=10
-    )
-
     if features is not None:
 
         logger.info(
             'Will compute log for %s features', len(features)
         )
+
+        features, train_working_df, test_working_df = scale_to_range(
+            features=features,
+            train_df=train_working_df,
+            test_df=test_working_df,
+            min_val=1,
+            max_val=10
+        )
+
+        logger.debug('Input test features for log:')
+        logger.debug('\n%s', test_working_df[features].describe().transpose())
 
         new_train_feature_names = []
         new_train_features = []
@@ -292,29 +295,72 @@ def log_features(
 
             logger.debug('Taking log of feature %s of %s', i + 1, len(features))
 
-            if kwargs['base'] == '2':
-                new_train_feature_names.append(f'{feature}_log2')
-                new_train_features.append(np.log2(train_working_df[feature]))
+            try:
 
-                if test_df is not None:
-                    new_test_feature_names.append(f'{feature}_log2')
-                    new_test_features.append(np.log2(test_working_df[feature]))
+                if kwargs['base'] == '2':
+                    new_train_feature_names.append(f'{feature}_log2')
+                    new_train_features.append(
+                        np.log2(train_working_df[feature],
+                            out=(np.array([np.nan]*len(train_working_df[feature]))),
+                            where=(np.array(train_working_df[feature]) > 0)
+                        )
+                    )
 
-            if kwargs['base'] == 'e':
-                new_train_feature_names.append(f'{feature}_loge')
-                new_train_features.append(np.log(train_working_df[feature]))
+                    if test_df is not None:
+                        new_test_feature_names.append(f'{feature}_log2')
+                        new_test_features.append(
+                            np.log2(test_working_df[feature],
+                                out=(np.array([np.nan]*len(test_working_df[feature]))),
+                                where=(np.array(test_working_df[feature]) > 0)
+                            )
+                        )
 
-                if test_df is not None:
-                    new_test_feature_names.append(f'{feature}_loge')
-                    new_test_features.append(np.log2(test_working_df[feature]))
+                if kwargs['base'] == 'e':
+                    new_train_feature_names.append(f'{feature}_loge')
+                    new_train_features.append(
+                        np.log(train_working_df[feature],
+                            out=(np.array([np.nan]*len(train_working_df[feature]))),
+                            where=(np.array(train_working_df[feature]) > 0)
+                        )
+                    )
 
-            if kwargs['base'] == '10':
-                new_train_feature_names.append(f'{feature}_log10')
-                new_train_features.append(np.log10(train_working_df[feature]))
+                    if test_df is not None:
+                        new_test_feature_names.append(f'{feature}_loge')
+                        new_test_features.append(
+                            np.log(test_working_df[feature],
+                                out=(np.array([np.nan]*len(test_working_df[feature]))),
+                                where=(np.array(test_working_df[feature]) > 0)
+                            )
+                        )
 
-                if test_df is not None:
-                    new_test_feature_names.append(f'{feature}_log10')
-                    new_test_features.append(np.log2(test_working_df[feature]))
+                if kwargs['base'] == '10':
+                    new_train_feature_names.append(f'{feature}_log10')
+                    new_train_features.append(
+                        np.log10(train_working_df[feature],
+                            out=(np.array([np.nan]*len(train_working_df[feature]))),
+                            where=(np.array(train_working_df[feature]) > 0)
+                        )
+                    )
+
+                    if test_df is not None:
+                        new_test_feature_names.append(f'{feature}_log10')
+                        new_test_features.append(
+                            np.log10(test_working_df[feature],
+                                out=(np.array([np.nan]*len(test_working_df[feature]))),
+                                where=(np.array(test_working_df[feature]) > 0)
+                            )
+                        )
+
+            except RuntimeWarning:
+                logger.warning('RuntimeWarning in log')
+                logger.debug('Last train feature name: %s', new_train_feature_names[-1])
+                logger.debug('Last test feature name: %s', new_test_feature_names[-1])
+                logger.debug('Train data:')
+                logger.debug(train_working_df[feature].to_list()[:10])
+                logger.debug('\n%s', train_working_df[feature].describe())
+                logger.debug('Test data:')
+                logger.debug(test_working_df[feature].to_list()[:10])
+                logger.debug('\n%s', test_working_df[feature].describe())
 
         logger.debug('New train features shape: %s', np.array(new_train_features).shape)
         logger.debug('New train feature names shape: %s', len(new_train_feature_names))
@@ -1128,11 +1174,13 @@ def scale_to_range(
 
     if features is not None:
 
-        scaler=MinMaxScaler(feature_range=(min_val, max_val))
-        train_df[features]=scaler.fit_transform(train_df[features])
+        for feature in features:
 
-        if test_df is not None:
-            test_df[features]=scaler.transform(test_df[features])
+            scaler=MinMaxScaler(feature_range=(min_val, max_val))
+            train_df[feature]=scaler.fit_transform(train_df[feature].to_frame())
+
+            if test_df is not None:
+                test_df[feature]=scaler.transform(test_df[feature].to_frame())
 
     return features, train_df, test_df
 
