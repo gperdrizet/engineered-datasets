@@ -19,7 +19,7 @@ logger = logging.getLogger()
 logging.basicConfig(
     filename='tests/logs/test_feature_methods.log',
     filemode='w',
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(levelname)s - %(name)s - %(message)s'
 )
 
