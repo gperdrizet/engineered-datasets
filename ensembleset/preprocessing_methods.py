@@ -2,26 +2,13 @@
 
 import warnings
 import logging
-# import multiprocessing as mp
-# from random import choices
-# from math import e
-# from itertools import permutations, combinations
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
-# from scipy.stats import gaussian_kde
-# from sklearn.exceptions import ConvergenceWarning
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import (
-    MinMaxScaler,
-    # OneHotEncoder,
-    # OrdinalEncoder,
-    # PolynomialFeatures,
-    # SplineTransformer,
-    # KBinsDiscretizer
-)
+from sklearn.preprocessing import MinMaxScaler
 
 warnings.filterwarnings('error')
 
@@ -231,10 +218,10 @@ def remove_constants(
 
 def scale_to_range(
         features: list,
-        train_df:pd.DataFrame,
-        test_df:pd.DataFrame,
-        min_val:float = 0.0,
-        max_val:float = 1.0
+        train_df: pd.DataFrame,
+        test_df: pd.DataFrame,
+        min_val: float = 0.0,
+        max_val: float = 1.0
 ) -> Tuple[list, pd.DataFrame, pd.DataFrame]:
 
     '''Scales features into range'''

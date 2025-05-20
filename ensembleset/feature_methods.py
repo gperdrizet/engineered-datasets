@@ -10,12 +10,9 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-# from pandas.api.types import is_numeric_dtype
 from scipy.stats import gaussian_kde
 from sklearn.exceptions import ConvergenceWarning
-# from sklearn.impute import KNNImputer
 from sklearn.preprocessing import (
-    # MinMaxScaler,
     OneHotEncoder,
     OrdinalEncoder,
     PolynomialFeatures,
@@ -298,72 +295,78 @@ def log_features(
 
             logger.debug('Taking log of feature %s of %s', i + 1, len(features))
 
-            try:
+            # try:
 
-                if kwargs['base'] == '2':
-                    new_train_feature_names.append(f'{feature}_log2')
-                    new_train_features.append(
-                        np.log2(train_working_df[feature],
-                            out=(np.array([np.nan]*len(train_working_df[feature]))),
-                            where=(np.array(train_working_df[feature]) > 0)
+            if kwargs['base'] == '2':
+                new_train_feature_names.append(f'{feature}_log2')
+                new_train_features.append(
+                    np.log2(
+                        train_working_df[feature],
+                        out=np.zeros_like(train_working_df[feature], dtype=np.float64),
+                        where=(np.array(train_working_df[feature]) > 0)
+                    )
+                )
+
+                if test_df is not None:
+                    new_test_feature_names.append(f'{feature}_log2')
+                    new_test_features.append(
+                        np.log2(
+                            test_working_df[feature],
+                            out=np.zeros_like(test_working_df[feature], dtype=np.float64),
+                            where=(np.array(test_working_df[feature]) > 0)
                         )
                     )
 
-                    if test_df is not None:
-                        new_test_feature_names.append(f'{feature}_log2')
-                        new_test_features.append(
-                            np.log2(test_working_df[feature],
-                                out=(np.array([np.nan]*len(test_working_df[feature]))),
-                                where=(np.array(test_working_df[feature]) > 0)
-                            )
-                        )
+            if kwargs['base'] == 'e':
+                new_train_feature_names.append(f'{feature}_loge')
+                new_train_features.append(
+                    np.log(
+                        train_working_df[feature],
+                        out=np.zeros_like(train_working_df[feature], dtype=np.float64),
+                        where=(np.array(train_working_df[feature]) > 0)
+                    )
+                )
 
-                if kwargs['base'] == 'e':
-                    new_train_feature_names.append(f'{feature}_loge')
-                    new_train_features.append(
-                        np.log(train_working_df[feature],
-                            out=(np.array([np.nan]*len(train_working_df[feature]))),
-                            where=(np.array(train_working_df[feature]) > 0)
+                if test_df is not None:
+                    new_test_feature_names.append(f'{feature}_loge')
+                    new_test_features.append(
+                        np.log(
+                            test_working_df[feature],
+                            out=np.zeros_like(test_working_df[feature], dtype=np.float64),
+                            where=(np.array(test_working_df[feature]) > 0)
                         )
                     )
 
-                    if test_df is not None:
-                        new_test_feature_names.append(f'{feature}_loge')
-                        new_test_features.append(
-                            np.log(test_working_df[feature],
-                                out=(np.array([np.nan]*len(test_working_df[feature]))),
-                                where=(np.array(test_working_df[feature]) > 0)
-                            )
-                        )
+            if kwargs['base'] == '10':
+                new_train_feature_names.append(f'{feature}_log10')
+                new_train_features.append(
+                    np.log10(
+                        train_working_df[feature],
+                        out=np.zeros_like(train_working_df[feature], dtype=np.float64),
+                        where=(np.array(train_working_df[feature]) > 0)
+                    )
+                )
 
-                if kwargs['base'] == '10':
-                    new_train_feature_names.append(f'{feature}_log10')
-                    new_train_features.append(
-                        np.log10(train_working_df[feature],
-                            out=(np.array([np.nan]*len(train_working_df[feature]))),
-                            where=(np.array(train_working_df[feature]) > 0)
+                if test_df is not None:
+                    new_test_feature_names.append(f'{feature}_log10')
+                    new_test_features.append(
+                        np.log10(
+                            test_working_df[feature],
+                            out=np.zeros_like(test_working_df[feature], dtype=np.float64),
+                            where=(np.array(test_working_df[feature]) > 0)
                         )
                     )
 
-                    if test_df is not None:
-                        new_test_feature_names.append(f'{feature}_log10')
-                        new_test_features.append(
-                            np.log10(test_working_df[feature],
-                                out=(np.array([np.nan]*len(test_working_df[feature]))),
-                                where=(np.array(test_working_df[feature]) > 0)
-                            )
-                        )
-
-            except RuntimeWarning:
-                logger.warning('RuntimeWarning in log')
-                logger.debug('Last train feature name: %s', new_train_feature_names[-1])
-                logger.debug('Last test feature name: %s', new_test_feature_names[-1])
-                logger.debug('Train data:')
-                logger.debug(train_working_df[feature].to_list()[:10])
-                logger.debug('\n%s', train_working_df[feature].describe())
-                logger.debug('Test data:')
-                logger.debug(test_working_df[feature].to_list()[:10])
-                logger.debug('\n%s', test_working_df[feature].describe())
+            # except RuntimeWarning:
+            #     logger.warning('RuntimeWarning in log')
+            #     logger.debug('Last train feature name: %s', new_train_feature_names[-1])
+            #     logger.debug('Last test feature name: %s', new_test_feature_names[-1])
+            #     logger.debug('Train data:')
+            #     logger.debug(train_working_df[feature].to_list()[:10])
+            #     logger.debug('\n%s', train_working_df[feature].describe())
+            #     logger.debug('Test data:')
+            #     logger.debug(test_working_df[feature].to_list()[:10])
+            #     logger.debug('\n%s', test_working_df[feature].describe())
 
         logger.debug('New train features shape: %s', np.array(new_train_features).shape)
         logger.debug('New train feature names shape: %s', len(new_train_feature_names))
@@ -374,6 +377,9 @@ def log_features(
         )
 
         if test_df is not None:
+            logger.debug('New test features shape: %s', np.array(new_test_features).shape)
+            logger.debug('New test feature names shape: %s', len(new_test_feature_names))
+
             new_test_features_df = pd.DataFrame(
                 np.array(new_test_features).T,
                 columns=new_test_feature_names
