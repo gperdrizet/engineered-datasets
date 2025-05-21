@@ -14,6 +14,8 @@ import tests.dummy_dataframe as test_data
 
 Path('tests/logs').mkdir(parents=True, exist_ok=True)
 
+logging.captureWarnings(True)
+
 logger = logging.getLogger()
 
 logging.basicConfig(

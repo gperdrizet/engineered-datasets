@@ -12,6 +12,9 @@ import pandas as pd
 import ensembleset.feature_engineerings as engineerings
 import ensembleset.feature_methods as fm
 
+logging.captureWarnings(True)
+
+
 class DataSet:
     '''Dataset generator class.'''
 

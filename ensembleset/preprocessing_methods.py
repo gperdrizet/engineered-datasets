@@ -1,6 +1,5 @@
 '''Collection of functions to clean and preprocess features before engineering.'''
 
-import warnings
 import logging
 from typing import Tuple
 
@@ -10,11 +9,12 @@ from pandas.api.types import is_numeric_dtype
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler
 
-warnings.filterwarnings('error')
-
 pd.set_option('display.width', 100)
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 100)
+
+logging.captureWarnings(True)
+
 
 def preprocess_features(
         features: list,
