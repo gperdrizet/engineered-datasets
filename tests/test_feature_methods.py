@@ -10,9 +10,12 @@ from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 
 import ensembleset.feature_methods as fm
+import ensembleset.preprocessing_methods as pm
 import tests.dummy_dataframe as test_data
 
 Path('tests/logs').mkdir(parents=True, exist_ok=True)
+
+logging.captureWarnings(True)
 
 logger = logging.getLogger()
 
@@ -86,19 +89,20 @@ class TestFeatureMethods(unittest.TestCase):
 
         for shortcircuit_preprocessing in [True, False]:
             for testing_data in [None, self.dummy_df.copy()]:
+                for features in ['', None, list(self.dummy_df.columns)]:
 
-                train_df, test_df=fm.poly_features(
-                    train_df=self.dummy_df.copy(),
-                    test_df=testing_data,
-                    features=list(self.dummy_df.columns),
-                    kwargs={'degree': 2},
-                    shortcircuit_preprocessing=shortcircuit_preprocessing
-                )
+                    train_df, test_df=fm.poly_features(
+                        train_df=self.dummy_df.copy(),
+                        test_df=testing_data,
+                        features=features,
+                        kwargs={'degree': 2},
+                        shortcircuit_preprocessing=shortcircuit_preprocessing
+                    )
 
-                self.assertTrue(isinstance(train_df, pd.DataFrame))
+                    self.assertTrue(isinstance(train_df, pd.DataFrame))
 
-                if testing_data is not None:
-                    self.assertTrue(isinstance(test_df, pd.DataFrame))
+                    if testing_data is not None:
+                        self.assertTrue(isinstance(test_df, pd.DataFrame))
 
 
     def test_spline_features(self):
@@ -254,3 +258,21 @@ class TestFeatureMethods(unittest.TestCase):
 
                 if testing_data is not None:
                     self.assertTrue(isinstance(test_df, pd.DataFrame))
+
+    def test_remove_constants(self):
+        '''Tests feature preprocessing constant filter.'''
+
+        df = pd.DataFrame.from_dict({
+            'feature1': [1,1,1],
+            'feature2': [2,2,2]
+        })
+
+        new_features, train_df, test_df = pm.remove_constants(
+            features=['feature1', 'feature2'],
+            train_df=df.copy(),
+            test_df=df.copy()
+        )
+
+        self.assertEqual(new_features, None)
+        self.assertEqual(train_df, None)
+        self.assertEqual(test_df, None)

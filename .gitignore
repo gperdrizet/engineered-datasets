@@ -6,4 +6,5 @@ ensembleset_data
 tests/logs
 optimization/logs
 dist
+test
 *.h5

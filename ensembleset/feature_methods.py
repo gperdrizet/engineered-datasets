@@ -1,6 +1,5 @@
 '''Collection of functions to run feature engineering operations.'''
 
-import warnings
 import logging
 import multiprocessing as mp
 from random import choices
@@ -11,7 +10,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import (
     OneHotEncoder,
     OrdinalEncoder,
@@ -22,11 +20,11 @@ from sklearn.preprocessing import (
 
 from ensembleset.preprocessing_methods import preprocess_features, scale_to_range, add_new_features
 
-warnings.filterwarnings('error')
-
 pd.set_option('display.width', 100)
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 100)
+
+logging.captureWarnings(True)
 
 
 def onehot_encoding(
@@ -131,7 +129,7 @@ def poly_features(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             transformer=PolynomialFeatures(**kwargs)
@@ -151,9 +149,6 @@ def poly_features(
 
             except ValueError:
                 logger.error('ValueError in poly feature transformer')
-
-            except RuntimeWarning:
-                logger.warning('RuntimeWarning in poly feature transformer')
 
         train_df, test_df = add_new_features(
             new_train_features = transformed_train_df,
@@ -205,7 +200,7 @@ def spline_features(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             transformer=SplineTransformer(**kwargs)
@@ -232,9 +227,6 @@ def spline_features(
 
             except ValueError:
                 logger.error('ValueError in spline feature transformer')
-
-            except RuntimeWarning:
-                logger.warning('RuntimeWarning in spline feature transformer')
 
     return train_df, test_df
 
@@ -268,7 +260,7 @@ def log_features(
         ]
     )
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         logger.info(
             'Will compute log for %s features', len(features)
@@ -356,17 +348,6 @@ def log_features(
                             where=(np.array(test_working_df[feature]) > 0)
                         )
                     )
-
-            # except RuntimeWarning:
-            #     logger.warning('RuntimeWarning in log')
-            #     logger.debug('Last train feature name: %s', new_train_feature_names[-1])
-            #     logger.debug('Last test feature name: %s', new_test_feature_names[-1])
-            #     logger.debug('Train data:')
-            #     logger.debug(train_working_df[feature].to_list()[:10])
-            #     logger.debug('\n%s', train_working_df[feature].describe())
-            #     logger.debug('Test data:')
-            #     logger.debug(test_working_df[feature].to_list()[:10])
-            #     logger.debug('\n%s', test_working_df[feature].describe())
 
         logger.debug('New train features shape: %s', np.array(new_train_features).shape)
         logger.debug('New train feature names shape: %s', len(new_train_feature_names))
@@ -535,7 +516,7 @@ def exponential_features(
         ]
     )
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         new_train_feature_names = []
         new_train_features = []
@@ -839,7 +820,7 @@ def kde_smoothing(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         new_test_features={}
         new_train_features={}
@@ -881,9 +862,6 @@ def kde_smoothing(
 
             except ValueError:
                 logger.error('Valueerror in KDE smoother')
-
-            except RuntimeWarning:
-                logger.warning('Runtime warning in KDE smoother')
 
         train_df, test_df=add_new_features(
             new_train_features = new_train_features,
@@ -938,7 +916,7 @@ def kbins_quantization(
     new_train_features = {}
     new_test_features = {}
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             kbins = KBinsDiscretizer(**kwargs)
@@ -951,12 +929,6 @@ def kbins_quantization(
                 if test_df is not None:
                     binned_feature = kbins.transform(test_working_df[feature].to_frame())
                     new_test_features[binned_feature_name] = binned_feature.flatten()
-
-            except ConvergenceWarning:
-                logger.warning('Caught ConvergenceWarning in KbinsDescretizer')
-
-            except UserWarning:
-                logger.warning('Caught UserWarning in KbinsDiscretizer')
 
             except ValueError:
                 logger.error('Caught ValueError in KbinsDiscretizer')
