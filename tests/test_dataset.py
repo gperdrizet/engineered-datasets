@@ -49,6 +49,19 @@ class TestDataSetInit(unittest.TestCase):
         self.assertTrue(isinstance(self.dataset.test_data, pd.DataFrame))
         self.assertTrue(isinstance(self.dataset.string_features, list))
         self.assertEqual(self.dataset.string_features[0], 'strings')
+        self.assertEqual(self.dataset.data_directory, 'ensembleset_data')
+        self.assertEqual(self.dataset.ensembleset_name, 'ensembleset.h5')
+
+        dataset = ds.DataSet(
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings'],
+            data_directory='test',
+            ensembleset_name='test'
+        )
+        self.assertEqual(dataset.data_directory, 'test')
+        self.assertEqual(dataset.ensembleset_name, 'test')
 
         with self.assertRaises(TypeError):
             ds.DataSet(
@@ -110,7 +123,10 @@ class TestDataSetInit(unittest.TestCase):
     def test_output_creation(self):
         '''Tests the creation of the HDF5 output sink.'''
 
-        with h5py.File('ensembleset_data/dataset.h5', 'r') as hdf:
+        with h5py.File(
+            f'{self.dataset.data_directory}/{self.dataset.ensembleset_name}',
+            'r'
+        ) as hdf:
 
             self.assertTrue('train' in hdf)
             self.assertTrue('test' in hdf)
@@ -124,7 +140,10 @@ class TestDataSetInit(unittest.TestCase):
             string_features=['strings']
         )
 
-        with h5py.File('ensembleset_data/dataset.h5', 'r') as hdf:
+        with h5py.File(
+            f'{self.dataset.data_directory}/{self.dataset.ensembleset_name}', 
+            'r'
+        ) as hdf:
 
             self.assertTrue('train' in hdf)
             self.assertTrue('test' in hdf)
@@ -212,7 +231,6 @@ class TestDatasetGeneration(unittest.TestCase):
                 train_data=self.dummy_df.copy(),
                 test_data=test_df,
                 string_features=['strings'],
-                data_directory='ensembleset_data'
             )
 
             dataset.make_datasets(
@@ -221,7 +239,7 @@ class TestDatasetGeneration(unittest.TestCase):
                 n_steps=self.n_steps
             )
 
-            with h5py.File('ensembleset_data/dataset.h5', 'a') as hdf:
+            with h5py.File(f'{dataset.data_directory}/{dataset.ensembleset_name}', 'a') as hdf:
 
                 self.assertEqual(len(hdf['train']), self.n_datasets + 1)
 

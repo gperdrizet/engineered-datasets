@@ -10,7 +10,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import (
     OneHotEncoder,
     OrdinalEncoder,
@@ -130,7 +129,7 @@ def poly_features(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             transformer=PolynomialFeatures(**kwargs)
@@ -150,9 +149,6 @@ def poly_features(
 
             except ValueError:
                 logger.error('ValueError in poly feature transformer')
-
-            except RuntimeWarning:
-                logger.warning('RuntimeWarning in poly feature transformer')
 
         train_df, test_df = add_new_features(
             new_train_features = transformed_train_df,
@@ -204,7 +200,7 @@ def spline_features(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             transformer=SplineTransformer(**kwargs)
@@ -264,7 +260,7 @@ def log_features(
         ]
     )
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         logger.info(
             'Will compute log for %s features', len(features)
@@ -520,7 +516,7 @@ def exponential_features(
         ]
     )
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         new_train_feature_names = []
         new_train_features = []
@@ -824,7 +820,7 @@ def kde_smoothing(
         else:
             test_working_df = None
 
-    if features is not None:
+    if features is not None and len(features) > 0:
 
         new_test_features={}
         new_train_features={}
@@ -920,7 +916,7 @@ def kbins_quantization(
     new_train_features = {}
     new_test_features = {}
 
-    if features is not None:
+    if features is not None and len(features) > 0:
         for feature in features:
 
             kbins = KBinsDiscretizer(**kwargs)
