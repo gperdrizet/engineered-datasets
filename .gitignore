@@ -2,10 +2,7 @@ __pycache__
 .vscode
 .venv
 .coverage
-ensembleset_data
-ensemblesets
-tests/logs
-optimization/logs
 dist
 test
+logs
 *.h5
