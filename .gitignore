@@ -3,6 +3,7 @@ __pycache__
 .venv
 .coverage
 ensembleset_data
+ensemblesets
 tests/logs
 optimization/logs
 dist
