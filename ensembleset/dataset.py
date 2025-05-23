@@ -126,7 +126,7 @@ class DataSet:
         # Start multiprocessing manager and create queues for I/O to dataset worker
         # and logging from workers
         manager=Manager()
-        input_queue=manager.Queue(maxsize=5)
+        input_queue=manager.Queue()
         output_queue=manager.Queue()
         logging_queue=manager.Queue()
 
