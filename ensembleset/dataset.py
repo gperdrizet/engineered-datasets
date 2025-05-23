@@ -25,7 +25,7 @@ class DataSet:
             test_data: pd.DataFrame = None,
             string_features: list = None,
             data_directory: str = 'ensembleset_data',
-            ensembleset_name: str = 'ensembleset.h5'
+            ensembleset_base_name: str = 'ensembleset'
         ):
 
         logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class DataSet:
             test_data=test_data,
             string_features=string_features,
             data_directory=data_directory,
-            ensembleset_name=ensembleset_name
+            ensembleset_base_name=ensembleset_base_name
         )
 
         # If the type check passed, assign arguments to attributes
@@ -54,15 +54,22 @@ class DataSet:
 
             self.string_features = string_features
             self.data_directory = data_directory
-            self.ensembleset_name = ensembleset_name
+            self.ensembleset_base_name = ensembleset_base_name
 
-        # Get the init logger
+        # Create the HDF5 output
+        try:
+            Path(self.data_directory).mkdir(parents=True, exist_ok=True)
+
+        except OSError as exc:
+            logger.error('Could not create output directory: %s', self.data_directory)
+            raise OSError from exc
+
         logger.info("Training label: '%s'", self.label)
         logger.info('Training data: %s', type(self.train_data))
         logger.info('Testing data: %s', type(self.test_data))
         logger.info('String features: %s', self.string_features)
         logger.info('Data directory: %s', self.data_directory)
-        logger.info('Ensembleset name: %s', self.ensembleset_name)
+        logger.info('Ensembleset basename: %s', self.ensembleset_base_name)
 
         # Enforce string type on DataFrame columns
         self.train_data.columns = self.train_data.columns.astype(str)
@@ -92,25 +99,6 @@ class DataSet:
         else:
             self.test_labels = None
 
-        # Create the HDF5 output
-        Path(self.data_directory).mkdir(parents=True, exist_ok=True)
-
-        # Create groups for training and testing datasets
-        with h5py.File(f'{self.data_directory}/{self.ensembleset_name}', 'a') as hdf:
-
-            _ = hdf.require_group('train')
-
-            if self.test_data is not None:
-                _ = hdf.require_group('test')
-
-        # Add the training and testing labels
-        with h5py.File(f'{self.data_directory}/{self.ensembleset_name}', 'w') as hdf:
-
-            _ = hdf.create_dataset('train/labels', data=self.train_labels)
-
-            if self.test_data is not None:
-                _ = hdf.create_dataset('test/labels', data=self.test_labels)
-
         # Define the feature engineering pipeline methods
         self.string_encodings=engineerings.STRING_ENCODINGS
         self.numerical_methods=engineerings.NUMERICAL_METHODS
@@ -126,7 +114,9 @@ class DataSet:
         logger.info('Running %s feature engineering steps per dataset', n_steps)
         logger.info('Selecting %s percent of features for each step', round(frac_features * 100))
 
-        with h5py.File(f'{self.data_directory}/{self.ensembleset_name}', 'a') as hdf:
+        ensembleset_file = self.create_output(n_datasets, frac_features, n_steps)
+
+        with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'a') as hdf:
 
             # Generate n datasets
             for n in range(n_datasets):
@@ -196,6 +186,8 @@ class DataSet:
                 if test_df is not None:
                     _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df).astype(np.float64))
 
+        return ensembleset_file
+
 
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
         '''Selects a random subset of features.'''
@@ -244,7 +236,7 @@ class DataSet:
             test_data: pd.DataFrame,
             string_features: list,
             data_directory: str,
-            ensembleset_name: str
+            ensembleset_base_name: str
     ) -> bool:
 
         '''Checks user argument types, returns true or false for all passing.'''
@@ -281,10 +273,36 @@ class DataSet:
         else:
             raise TypeError('Data directory is not a string.')
 
-        if isinstance(ensembleset_name, str):
+        if isinstance(ensembleset_base_name, str):
             check_pass = True
 
         else:
-            raise TypeError('Ensembleset name is not a string.')
+            raise TypeError('Ensembleset base name is not a string.')
 
         return check_pass
+
+
+    def create_output(self, n_datasets:int, frac_features:int, n_steps:int):
+        '''Creates HDF5 output sink for ensembleset.'''
+
+        # Create groups for training and testing datasets
+        ensembleset_file = (f'{self.ensembleset_base_name}-' +
+                            f'{n_datasets}-{frac_features}-{n_steps}.pkl')
+
+        with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'a') as hdf:
+
+            # Create groups for train and test datasets
+            _ = hdf.require_group('train')
+
+            if self.test_data is not None:
+                _ = hdf.require_group('test')
+
+        # Add the training and testing labels
+        with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'w') as hdf:
+
+            _ = hdf.create_dataset('train/labels', data=self.train_labels)
+
+            if self.test_data is not None:
+                _ = hdf.create_dataset('test/labels', data=self.test_labels)
+
+        return ensembleset_file
