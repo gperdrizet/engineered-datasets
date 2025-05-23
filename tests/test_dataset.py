@@ -29,28 +29,28 @@ class TestDataSetInit(unittest.TestCase):
     '''Tests for main data set generator class initialization.'''
 
     def setUp(self):
-        '''Dummy DataFrames and datasets for tests.'''
+        '''Dummy DataFrames for tests.'''
 
         self.dummy_df = test_data.DUMMY_DF
 
-        self.dataset = ds.DataSet(
+
+    def test_class_arguments(self):
+        '''Tests assignments of class attributes from user arguments.'''
+
+        dataset = ds.DataSet(
             label='floats_pos',
             train_data=self.dummy_df.copy(),
             test_data=self.dummy_df.copy(),
             string_features=['strings']
         )
 
-
-    def test_class_arguments(self):
-        '''Tests assignments of class attributes from user arguments.'''
-
-        self.assertTrue(isinstance(self.dataset.label, str))
-        self.assertTrue(isinstance(self.dataset.train_data, pd.DataFrame))
-        self.assertTrue(isinstance(self.dataset.test_data, pd.DataFrame))
-        self.assertTrue(isinstance(self.dataset.string_features, list))
-        self.assertEqual(self.dataset.string_features[0], 'strings')
-        self.assertEqual(self.dataset.data_directory, 'ensembleset_data')
-        self.assertEqual(self.dataset.ensembleset_name, 'ensembleset.h5')
+        self.assertTrue(isinstance(dataset.label, str))
+        self.assertTrue(isinstance(dataset.train_data, pd.DataFrame))
+        self.assertTrue(isinstance(dataset.test_data, pd.DataFrame))
+        self.assertTrue(isinstance(dataset.string_features, list))
+        self.assertEqual(dataset.string_features[0], 'strings')
+        self.assertEqual(dataset.data_directory, 'ensembleset_data')
+        self.assertEqual(dataset.ensembleset_base_name, 'ensembleset')
 
         dataset = ds.DataSet(
             label='floats_pos',
@@ -58,10 +58,11 @@ class TestDataSetInit(unittest.TestCase):
             test_data=self.dummy_df.copy(),
             string_features=['strings'],
             data_directory='test',
-            ensembleset_name='test'
+            ensembleset_base_name='test'
         )
+
         self.assertEqual(dataset.data_directory, 'test')
-        self.assertEqual(dataset.ensembleset_name, 'test')
+        self.assertEqual(dataset.ensembleset_base_name, 'test')
 
         with self.assertRaises(TypeError):
             ds.DataSet(
@@ -95,19 +96,54 @@ class TestDataSetInit(unittest.TestCase):
                 string_features='Not a list of features' # Bad string features
             )
 
+        with self.assertRaises(TypeError):
             ds.DataSet(
                 label='float_pos',
                 train_data=self.dummy_df.copy(),
                 test_data=None,
-                string_features='strings'
+                string_features='strings' # Bad string features
+            )
+
+        with self.assertRaises(TypeError):
+            ds.DataSet(
+                label='float_pos',
+                train_data=self.dummy_df.copy(),
+                test_data=None,
+                string_features=['strings'],
+                data_directory=0 # bad data directory type
+            )
+
+        with self.assertRaises(TypeError):
+            ds.DataSet(
+                label='float_pos',
+                train_data=self.dummy_df.copy(),
+                test_data=None,
+                string_features=['strings'],
+                ensembleset_base_name=0 # bad ensembleset basename type
+            )
+
+        with self.assertRaises(OSError):
+            ds.DataSet(
+                label='float_pos',
+                train_data=self.dummy_df.copy(),
+                test_data=None,
+                string_features=['strings'],
+                data_directory='/test' # Sketchy data directory
             )
 
 
     def test_label_assignment(self):
         '''Tests assigning and saving labels.'''
 
-        self.assertEqual(self.dataset.train_labels[-1], 7.0)
-        self.assertEqual(self.dataset.test_labels[-1], 7.0)
+        dataset = ds.DataSet(
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings']
+        )
+
+        self.assertEqual(dataset.train_labels[-1], 7.0)
+        self.assertEqual(dataset.test_labels[-1], 7.0)
 
         dataset=ds.DataSet(
             label='bad_label_feature',
@@ -120,42 +156,18 @@ class TestDataSetInit(unittest.TestCase):
         self.assertTrue(np.isnan(dataset.test_labels[-1]))
 
 
-    def test_output_creation(self):
-        '''Tests the creation of the HDF5 output sink.'''
-
-        with h5py.File(
-            f'{self.dataset.data_directory}/{self.dataset.ensembleset_name}',
-            'r'
-        ) as hdf:
-
-            self.assertTrue('train' in hdf)
-            self.assertTrue('test' in hdf)
-            self.assertEqual(hdf['test/labels'][-1], 7.0)
-            self.assertEqual(hdf['test/labels'][-1], 7.0)
-
-        _=ds.DataSet(
-            label='bad_label_feature',
-            train_data=self.dummy_df,
-            test_data=self.dummy_df,
-            string_features=['strings']
-        )
-
-        with h5py.File(
-            f'{self.dataset.data_directory}/{self.dataset.ensembleset_name}', 
-            'r'
-        ) as hdf:
-
-            self.assertTrue('train' in hdf)
-            self.assertTrue('test' in hdf)
-            self.assertTrue(np.isnan(hdf['test/labels'][-1]))
-            self.assertTrue(np.isnan(hdf['test/labels'][-1]))
-
-
     def test_pipeline_options(self):
         '''Tests the creation of feature engineering pipeline options'''
 
-        self.assertTrue(isinstance(self.dataset.string_encodings, dict))
-        self.assertTrue(isinstance(self.dataset.numerical_methods, dict))
+        dataset = ds.DataSet(
+            label='floats_pos',
+            train_data=self.dummy_df.copy(),
+            test_data=self.dummy_df.copy(),
+            string_features=['strings']
+        )
+
+        self.assertTrue(isinstance(dataset.string_encodings, dict))
+        self.assertTrue(isinstance(dataset.numerical_methods, dict))
 
 
 class TestDataPipelineGen(unittest.TestCase):
@@ -233,13 +245,13 @@ class TestDatasetGeneration(unittest.TestCase):
                 string_features=['strings'],
             )
 
-            dataset.make_datasets(
+            ensemble_file = dataset.make_datasets(
                 n_datasets=self.n_datasets,
                 frac_features=self.frac_features,
                 n_steps=self.n_steps
             )
 
-            with h5py.File(f'{dataset.data_directory}/{dataset.ensembleset_name}', 'a') as hdf:
+            with h5py.File(f'{dataset.data_directory}/{ensemble_file}', 'a') as hdf:
 
                 self.assertEqual(len(hdf['train']), self.n_datasets + 1)
 

@@ -262,7 +262,7 @@ def log_features(
 
     if features is not None and len(features) > 0:
 
-        logger.info(
+        logger.debug(
             'Will compute log for %s features', len(features)
         )
 
@@ -423,7 +423,7 @@ def ratio_features(
         if len(feature_pairs) > 100:
             feature_pairs = choices(feature_pairs, k=100)
 
-        logger.info(
+        logger.debug(
             'Will compute quotients for %s pairs of features', len(feature_pairs)
         )
 
@@ -482,7 +482,7 @@ def ratio_features(
         )
 
     else:
-        logger.info('No features to divide')
+        logger.debug('No features to divide')
 
     return train_df, test_df
 
@@ -619,7 +619,7 @@ def sum_features(
         if len(addend_sets) > 100:
             addend_sets = choices(addend_sets, k=100)
 
-        logger.info(
+        logger.debug(
             'Will compute sums for %s sets of %s features', len(addend_sets), n_addends
         )
 
@@ -672,7 +672,7 @@ def sum_features(
         )
 
     else:
-        logger.info('No features to sum')
+        logger.debug('No features to sum')
 
     return train_df, test_df
 
@@ -724,7 +724,7 @@ def difference_features(
         if len(subtrahend_sets) > 100:
             subtrahend_sets = choices(subtrahend_sets, k=100)
 
-        logger.info(
+        logger.debug(
             'Will compute differences for %s sets of %s features',
             len(subtrahend_sets),
             n_subtrahends
@@ -775,7 +775,7 @@ def difference_features(
         )
 
     else:
-        logger.info('No features to subtract')
+        logger.debug('No features to subtract')
 
     return train_df, test_df
 
@@ -831,7 +831,7 @@ def kde_smoothing(
         else:
             sample_df=train_working_df
 
-        workers = mp.cpu_count() - 2
+        workers = 2
 
         for feature in features:
 
