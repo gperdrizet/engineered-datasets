@@ -1,7 +1,9 @@
 '''Generates variations of a dataset using a pool of feature engineering
 techniques. Used for training ensemble models.'''
 
+import time
 import logging
+from multiprocessing import Manager, Process, cpu_count
 from pathlib import Path
 from random import choice, shuffle
 
@@ -104,7 +106,12 @@ class DataSet:
         self.numerical_methods=engineerings.NUMERICAL_METHODS
 
 
-    def make_datasets(self, n_datasets:int, frac_features:int, n_steps:int):
+    def make_datasets(
+            self,
+            n_datasets: int,
+            frac_features: int,
+            n_steps: int
+    ):
         '''Makes n datasets with different feature subsets and pipelines.'''
 
         logger = logging.getLogger(__name__ + '.make_datasets')
@@ -114,79 +121,289 @@ class DataSet:
         logger.info('Running %s feature engineering steps per dataset', n_steps)
         logger.info('Selecting %s percent of features for each step', round(frac_features * 100))
 
-        ensembleset_file = self.create_output(n_datasets, frac_features, n_steps)
+        ensembleset_file = self._create_output(n_datasets, frac_features, n_steps)
 
-        with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'a') as hdf:
+        # Start multiprocessing manager and create queues for I/O to dataset worker
+        # and logging from workers
+        manager=Manager()
+        input_queue=manager.Queue(maxsize=5)
+        output_queue=manager.Queue()
+        logging_queue=manager.Queue()
 
-            # Generate n datasets
-            for n in range(n_datasets):
+        # Create dataset worker processes
+        dataset_worker_processes=[]
 
-                logger.info('Generating dataset %s of %s', n+1, n_datasets)
-                logger.info('Input training data shape: %s', self.train_data.shape)
+        for worker_num in range(cpu_count() // 2):
+            dataset_worker_processes.append(
+                Process(
+                    target=self._dataset_worker,
+                    args=(
+                        worker_num,
+                        input_queue,
+                        output_queue,
+                        logging_queue,
+                    )
+                )
+            )
 
-                # Take a copy of the training and test data
-                train_df = self.train_data.copy()
+        for worker_num, dataset_worker_process in enumerate(dataset_worker_processes):
+            logger.info('Starting dataset worker %s', worker_num)
+            dataset_worker_process.start()
 
-                if self.test_data is not None:
-                    test_df = self.test_data.copy()
-                    logger.info('Input testing data shape: %s', self.test_data.shape)
+        # Create output worker process
+        output_worker_process = Process(
+            target=self._output_worker,
+            args=(
+                ensembleset_file,
+                len(dataset_worker_processes),
+                output_queue,
+                logging_queue,
+            )
+        )
 
-                else:
-                    test_df = None
+        output_worker_process.start()
 
-                # Generate a data pipeline
-                pipeline = self._generate_data_pipeline(n_steps)
+        # Create worker logging process
+        worker_logging_process = Process(
+            target=self._logging_worker,
+            args=(len(dataset_worker_processes), logging_queue,)
+        )
 
-                # Set input n features for first round
-                input_n_features = int(len(train_df.columns.to_list()) * frac_features)
-                input_n_features = max([input_n_features, 1])
+        worker_logging_process.start()
 
-                # Loop on and apply each method in the pipeline
-                for method, arguments in pipeline.items():
+        # Add workunits to the queue
+        for n in range(n_datasets):
+            input_queue.put(
+                {
+                    'dataset': n,
+                    'frac_features': frac_features,
+                    'n_steps': n_steps
+                }
+            )
 
-                    func = getattr(fm, method)
+        # Send done signals
+        for dataset_worker_process in dataset_worker_processes:
+            input_queue.put({'dataset': 'done'})
 
-                    if method in self.string_encodings:
+        # Join and close workers
+        for dataset_worker_process in dataset_worker_processes:
+            dataset_worker_process.join()
+            dataset_worker_process.close()
 
-                        logger.info('Applying %s to %s' , method, self.string_features)
+        output_worker_process.join()
+        output_worker_process.close()
 
-                        train_df, test_df = func(
-                            train_df,
-                            test_df,
-                            self.string_features,
-                            arguments
-                        )
-
-                    else:
-
-                        n_features = int(len(train_df.columns.to_list()) * frac_features)
-                        n_features = max([n_features, 1])
-                        n_features = min([n_features, 2 * input_n_features])
-                        input_n_features = n_features
-
-                        features = self._select_features(n_features, train_df)
-
-                        logger.info('Applying %s to %s features' , method, len(features))
-
-                        train_df, test_df = func(
-                            train_df,
-                            test_df,
-                            features,
-                            arguments
-                        )
-
-                        logger.info('New training data shape: %s', train_df.shape)
-
-                        if test_df is not None:
-                            logger.info('New testing data shape: %s', test_df.shape)
-
-                # Save the results to HDF5 output
-                _ = hdf.create_dataset(f'train/{n}', data=np.array(train_df).astype(np.float64))
-
-                if test_df is not None:
-                    _ = hdf.create_dataset(f'test/{n}', data=np.array(test_df).astype(np.float64))
+        worker_logging_process.join()
+        worker_logging_process.close()
 
         return ensembleset_file
+
+
+    def _dataset_worker(self, worker_num, input_queue, output_queue, logging_queue):
+        '''Worker process to generate datasets for a given ensemble.'''
+
+        while True:
+            workunit = input_queue.get()
+            dataset = workunit['dataset']
+
+            if dataset == 'done':
+                output_queue.put({'worker': 'done'})
+                logging_queue.put({'worker': 'done'})
+                return
+
+            else:
+                frac_features = workunit['frac_features']
+                n_steps = workunit['n_steps']
+
+            logging_queue.put({
+                'worker': str(worker_num),
+                'level': 'info',
+                'message': f'Input training data shape: {self.train_data.shape}'
+            })
+
+            # Take a copy of the training and test data and sample if desired
+            train_df = self.train_data.copy()
+
+            if self.test_data is not None:
+                test_df = self.test_data.copy()
+
+                logging_queue.put({
+                    'worker': str(worker_num),
+                    'level': 'info',
+                    'message': f'Input testing data shape: {self.test_data.shape}'
+                })
+
+            else:
+                test_df = None
+
+            # Generate a data pipeline
+            pipeline = self._generate_data_pipeline(n_steps)
+
+            # Set input n features for first round
+            input_n_features = int(len(train_df.columns.to_list()) * frac_features)
+            input_n_features = max([input_n_features, 1])
+
+            # Loop on and apply each method in the pipeline
+            for method, arguments in pipeline.items():
+                func = getattr(fm, method)
+
+                if method in self.string_encodings:
+
+                    logging_queue.put({
+                        'worker': str(worker_num),
+                        'level': 'info',
+                        'message': f'Applying {method} to {self.string_features}'
+                    })
+
+                    train_df, test_df = func(
+                        train_df,
+                        test_df,
+                        self.string_features,
+                        arguments
+                    )
+
+                else:
+
+                    n_features = int(len(train_df.columns.to_list()) * frac_features)
+                    n_features = max([n_features, 1])
+                    n_features = min([n_features, 2 * input_n_features])
+                    input_n_features = n_features
+
+                    features = self._select_features(n_features, train_df)
+
+                    logging_queue.put({
+                        'worker': str(worker_num),
+                        'level': 'info',
+                        'message': f'Applying {method} to {len(features)} features'
+                    })
+
+                    train_df, test_df = func(
+                        train_df,
+                        test_df,
+                        features,
+                        arguments
+                    )
+
+                    logging_queue.put({
+                        'worker': str(worker_num),
+                        'level': 'info',
+                        'message': f'New training data shape: {train_df.shape}'
+                    })
+
+                    if test_df is not None:
+                        logging_queue.put({
+                            'worker': str(worker_num),
+                            'level': 'info',
+                            'message': f'New testing data shape: {test_df.shape}'
+                        })
+
+            logging_queue.put({
+                'worker': str(worker_num),
+                'level': 'info',
+                'message': f'Final training data shape: {train_df.shape}'
+            })
+
+            if test_df is not None:
+                logging_queue.put({
+                    'worker': str(worker_num),
+                    'level': 'info',
+                    'message': f'Final testing data shape: {test_df.shape}'
+                })
+
+            output_queue.put({
+                'worker': worker_num,
+                'dataset': dataset,
+                'train_df': train_df,
+                'test_df': test_df
+            })
+
+            time.sleep(0.1)
+
+
+    def _output_worker(self, ensembleset_file, n_workers, output_queue, logging_queue):
+        '''Worker process to collect completed datasets and write them to HDF5.'''
+
+        done_count = 0
+        dataset = None
+        train_df = None
+        test_df = None
+
+        while True:
+            workunit = output_queue.get()
+            worker = workunit['worker']
+
+            if worker == 'done':
+                done_count += 1
+
+                if done_count == n_workers:
+                    logging_queue.put({'worker': 'done'})
+
+                    return
+
+            else:
+                dataset = workunit['dataset']
+                train_df = workunit['train_df']
+                test_df = workunit['test_df']
+
+                with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'a') as hdf:
+
+                    # Save the results to HDF5 output
+                    _ = hdf.create_dataset(
+                        f'train/{dataset}',
+                        data=np.array(train_df).astype(np.float64)
+                    )
+
+                    if test_df is not None:
+                        _ = hdf.create_dataset(
+                            f'test/{dataset}',
+                            data=np.array(test_df).astype(np.float64)
+                        )
+
+                logging_queue.put({
+                    'worker': 'output',
+                    'level': 'info',
+                    'message': f'Saved dataset {dataset} from worker {worker}'
+                })
+
+            time.sleep(0.1)
+
+
+    def _logging_worker(self, n_workers, logging_queue):
+        '''Worker process to log messages from dataset and output workers.'''
+
+        logger = logging.getLogger(__name__ + '.dataset_worker')
+        logger.addHandler(logging.NullHandler())
+
+        done_count = 0
+        level = None
+        message = None
+
+        while True:
+            workunit = logging_queue.get()
+            worker = workunit['worker']
+
+            if worker == 'done':
+                done_count += 1
+
+                if done_count == n_workers + 1:
+                    return
+
+            else:
+
+                level = workunit['level']
+                message = workunit['message']
+
+                if level == 'info':
+                    logger.info(message)
+
+                elif level == 'debug':
+                    logger.debug(message)
+
+                elif level == 'warning':
+                    logger.warning(message)
+
+                elif level == 'error':
+                    logger.error(message)
 
 
     def _select_features(self, n_features:int, data_df:pd.DataFrame):
@@ -282,12 +499,12 @@ class DataSet:
         return check_pass
 
 
-    def create_output(self, n_datasets:int, frac_features:int, n_steps:int):
+    def _create_output(self, n_datasets:int, frac_features:int, n_steps:int):
         '''Creates HDF5 output sink for ensembleset.'''
 
         # Create groups for training and testing datasets
         ensembleset_file = (f'{self.ensembleset_base_name}-' +
-                            f'{n_datasets}-{frac_features}-{n_steps}.pkl')
+                            f'{n_datasets}-{frac_features}-{n_steps}.h5')
 
         with h5py.File(f'{self.data_directory}/{ensembleset_file}', 'a') as hdf:
 
